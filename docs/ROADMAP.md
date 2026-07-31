@@ -7,7 +7,7 @@ Immer nur *einen* Punkt gleichzeitig angehen. Hak ab, was fertig ist.
 - [x] Projektordner & Doku-Gerüst angelegt
 - [x] Grundgerüst läuft: Raster wird angezeigt, Tippen füllt die Felder
 - [ ] Einmal erfolgreich aufs eigene Handy installiert (PWA)
-- [ ] `git init` + erster Commit
+- [x] `git init` + erster Commit
 - [ ] (Optional) Repo zu GitHub gepusht
 
 ## M1 – Eingabe rund machen
