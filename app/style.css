@@ -1,0 +1,99 @@
+:root {
+  --bg: #121213;
+  --text: #ffffff;
+  --rahmen: #3a3a3c;
+  --rahmen-hell: #565758;
+  --gruen: #6aaa64;
+  --gelb: #c9b458;   /* schon vordefiniert – brauchst du in M2 */
+  --grau: #3a3a3c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  text-align: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--rahmen);
+}
+.app-header h1 {
+  margin: 0;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-size: 1.6rem;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+}
+
+/* ---- Raster ---- */
+.raster {
+  display: grid;
+  grid-template-columns: repeat(5, 60px);
+  grid-auto-rows: 60px;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.feld {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--rahmen);
+  font-size: 2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  user-select: none;
+}
+.feld.gefuellt { border-color: var(--rahmen-hell); }
+
+/* Auswertungs-Farben */
+.feld.gruen { background: var(--gruen); border-color: var(--gruen); }
+.feld.gelb  { background: var(--gelb);  border-color: var(--gelb); }
+.feld.grau  { background: var(--grau);  border-color: var(--grau); }
+
+.meldung {
+  min-height: 1.4em;
+  font-weight: 600;
+  text-align: center;
+}
+
+.hint {
+  max-width: 360px;
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+code {
+  background: rgba(255,255,255,0.1);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.app-footer {
+  text-align: center;
+  padding: 12px;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+/* Auf kleinen Handys die Felder etwas verkleinern */
+@media (max-width: 360px) {
+  .raster { grid-template-columns: repeat(5, 52px); grid-auto-rows: 52px; }
+  .feld { font-size: 1.6rem; }
+}

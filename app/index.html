@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wördle</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#6aaa64" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Wördle</h1>
+  </header>
+
+  <main>
+    <!-- Das Raster (6 Zeilen x 5 Felder) wird per JavaScript gefüllt. -->
+    <div id="raster" class="raster"></div>
+
+    <!-- Kurze Meldungen (z. B. "Gewonnen!") kommen später hier rein. -->
+    <p id="meldung" class="meldung"></p>
+
+    <p class="hint">
+      Tippe ein 5-Buchstaben-Wort und drück <strong>Enter</strong>.<br />
+      👉 Nächster Schritt: <strong>M2</strong> in <code>docs/ROADMAP.md</code> –
+      die Farb-Logik richtig machen (gelb + doppelte Buchstaben).
+    </p>
+  </main>
+
+  <footer class="app-footer">
+    <span id="pwa-status">Web-Version</span>
+  </footer>
+
+  <!-- Reihenfolge wichtig: erst die Wörter, dann die Spiel-Logik. -->
+  <script src="woerter.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

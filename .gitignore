@@ -1,0 +1,22 @@
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Node (falls du später Tools nutzt)
+node_modules/
+npm-debug.log*
+
+# Java / Spring Boot (spätere Ausbaustufe)
+target/
+*.class
+.gradle/
+build/
+
+# Umgebungs-/Geheimdaten
+.env
+*.local
