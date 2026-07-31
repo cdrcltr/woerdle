@@ -6,9 +6,9 @@ Immer nur *einen* Punkt gleichzeitig angehen. Hak ab, was fertig ist.
 ## ✅ M0 – Setup
 - [x] Projektordner & Doku-Gerüst angelegt
 - [x] Grundgerüst läuft: Raster wird angezeigt, Tippen füllt die Felder
-- [ ] Einmal erfolgreich aufs eigene Handy installiert (PWA)
+- [x] Einmal erfolgreich aufs eigene Handy installiert (PWA)
 - [x] `git init` + erster Commit
-- [ ] (Optional) Repo zu GitHub gepusht
+- [x] (Optional) Repo zu GitHub gepusht
 
 ## M1 – Eingabe rund machen
 - [ ] Buchstaben tippen füllt die aktuelle Zeile (ist schon da – Code lesen & verstehen!)
