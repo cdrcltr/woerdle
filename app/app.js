@@ -10,6 +10,9 @@
 //   - M2: Farb-Logik richtig (gelb + doppelte Buchstaben)  <-- das Herzstück
 //   - M3: Gewinnen / Verlieren erkennen
 //   - ...
+
+
+//Test
 // ============================================================
 
 const WORTLAENGE = 5;
