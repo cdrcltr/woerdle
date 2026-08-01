@@ -99,13 +99,17 @@ function zeileAuswerten() {
     }
   }
 
-  // --- Farben anzeigen ---
+  // --- Farben im Raster anzeigen ---
   for (let i = 0; i < WORTLAENGE; i++) {
     felder[aktuelleZeile][i].classList.add(ergebnis[i]);
   }
 
+  // --- NEU (M5): passende Tasten auf der Bildschirm-Tastatur einfaerben ---
+  for (let i = 0; i < WORTLAENGE; i++) {
+    tasteEinfaerben(aktuelleEingabe[i], ergebnis[i]);
+  }
+
   // --- M3: Gewinn / Niederlage pruefen ---
-  // Gewonnen, wenn die Eingabe exakt dem Zielwort entspricht.
   const gewonnen = aktuelleEingabe === ZIEL;
 
   aktuelleZeile++;
@@ -124,20 +128,17 @@ function zeileAuswerten() {
 }
 
 function neuesSpiel() {
-  // Neues Zufallswort
   ZIEL = WOERTER[Math.floor(Math.random() * WOERTER.length)];
   console.log("Zielwort (zum Testen):", ZIEL);
 
-  // Zustand zuruecksetzen
   aktuelleZeile = 0;
   aktuelleEingabe = "";
   spielVorbei = false;
 
-  // Meldung + Button zuruecksetzen
   document.getElementById("meldung").textContent = "";
   document.getElementById("neustart").hidden = true;
 
-  // Raster leeren: Buchstaben und Farben von allen Feldern entfernen
+  // Raster leeren
   for (let zeile = 0; zeile < MAX_VERSUCHE; zeile++) {
     for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
       const feld = felder[zeile][spalte];
@@ -145,15 +146,23 @@ function neuesSpiel() {
       feld.classList.remove("gruen", "gelb", "grau", "gefuellt");
     }
   }
+
+  // NEU (M5): Tastatur-Farben zuruecksetzen
+  const tasten = document.querySelectorAll(".taste");
+  for (const t of tasten) {
+    t.classList.remove("gruen", "gelb", "grau");
+  }
 }
 
 // ------------------------------------------------------------
 // Auf Tastendruck reagieren
 // ------------------------------------------------------------
 function tastendruck(event) {
-  if (spielVorbei) return;
+  verarbeiteTaste(event.key);
+}
 
-  const taste = event.key;
+function verarbeiteTaste(taste) {
+  if (spielVorbei) return;
 
   if (taste === "Enter") {
     if (aktuelleEingabe.length < WORTLAENGE) {
@@ -173,11 +182,67 @@ function tastendruck(event) {
     return;
   }
 
-  // Nur einzelne Buchstaben A–Z zulassen
   if (/^[a-zA-Z]$/.test(taste) && aktuelleEingabe.length < WORTLAENGE) {
     aktuelleEingabe += taste.toUpperCase();
-    document.getElementById("meldung").textContent = "";   // beim Weitertippen weg
+    document.getElementById("meldung").textContent = "";
     eingabeAnzeigen();
+  }
+}
+
+const TASTATUR_REIHEN = [
+  ["Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["Enter", "Y", "X", "C", "V", "B", "N", "M", "Backspace"],
+];
+
+function tastaturAufbauen() {
+  const tastatur = document.getElementById("tastatur");
+  for (const reihe of TASTATUR_REIHEN) {
+    const reiheDiv = document.createElement("div");
+    reiheDiv.className = "tasten-reihe";
+    for (const taste of reihe) {
+      const knopf = document.createElement("button");
+      knopf.className = "taste";
+      knopf.dataset.taste = taste; // damit wir die Taste spaeter einfaerben koennen
+      if (taste === "Backspace") {
+        knopf.textContent = "⌫";
+        knopf.classList.add("taste-breit");
+      } else if (taste === "Enter") {
+        knopf.textContent = "Enter";
+        knopf.classList.add("taste-breit");
+      } else {
+        knopf.textContent = taste;
+      }
+      knopf.addEventListener("click", () => {
+        verarbeiteTaste(taste);
+        knopf.blur(); // Fokus loesen, sonst loest die echte Enter-Taste den Knopf erneut aus
+      });
+      reiheDiv.appendChild(knopf);
+    }
+    tastatur.appendChild(reiheDiv);
+  }
+}
+
+function tasteEinfaerben(buchstabe, farbe) {
+  const knopf = document.querySelector('.taste[data-taste="' + buchstabe + '"]');
+  if (knopf === null) {
+    return;
+  }
+  if (knopf.classList.contains("gruen")) {
+    return; // gruen hat hoechste Prioritaet und bleibt gruen
+  }
+  if (farbe === "gruen") {
+    knopf.classList.remove("gelb", "grau");
+    knopf.classList.add("gruen");
+  } else if (farbe === "gelb") {
+    if (!knopf.classList.contains("gelb")) {
+      knopf.classList.remove("grau");
+      knopf.classList.add("gelb");
+    }
+  } else {
+    if (!knopf.classList.contains("gelb")) {
+      knopf.classList.add("grau");
+    }
   }
 }
 
@@ -187,6 +252,7 @@ function tastendruck(event) {
 rasterAufbauen();
 document.addEventListener("keydown", tastendruck);
 document.getElementById("neustart").addEventListener("click", neuesSpiel);
+tastaturAufbauen();
 
 // ------------------------------------------------------------
 // PWA: Service Worker registrieren (offline-fähig & installierbar)

@@ -109,3 +109,35 @@ code {
   background: var(--gruen);
   cursor: pointer;
 }
+
+.tastatur {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 20px;
+  width: 100%;
+  max-width: 500px;
+}
+.tasten-reihe {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.taste {
+  flex: 1;
+  min-width: 30px;
+  height: 48px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 6px;
+  background: #818384;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.taste-breit { flex: 1.5; font-size: 0.8rem; }
+.taste.gruen { background: var(--gruen); }
+.taste.gelb  { background: var(--gelb); }
+.taste.grau  { background: #3a3a3c; }
