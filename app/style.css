@@ -218,3 +218,11 @@ main { min-height: 0; padding: 8px; gap: 2px; justify-content: flex-start; }
   width: 1.4em;
   border-radius: 6px;
 }
+
+.tasten-reihe { gap: 4px; }
+.taste {
+  min-width: 0;
+  padding: 0;
+  flex: 1 1 0;
+}
+.taste-breit { font-size: 1rem; }

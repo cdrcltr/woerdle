@@ -12,7 +12,7 @@ const TAG_SCHLUESSEL = "woerdle-taeglich";
 
 // --- Zustand ---
 let ZIEL = "";                       // wird von spielStarten() gesetzt
-let modus = ladeModus();             // "taeglich" oder "endlos"
+let modus = "taeglich";            // "taeglich" oder "endlos"
 let aktuelleZeile = 0;
 let zeileBuchstaben = ["", "", "", "", ""]; // Buchstaben der aktuellen Zeile
 let aktivesFeld = 0;                 // welches Feld gerade ausgewaehlt ist
@@ -94,7 +94,7 @@ function tastaturAufbauen() {
         knopf.textContent = "⌫";
         knopf.classList.add("taste-breit");
       } else if (taste === "Enter") {
-        knopf.textContent = "Enter";
+        knopf.textContent = "⏎";
         knopf.classList.add("taste-breit");
       } else {
         knopf.textContent = taste;

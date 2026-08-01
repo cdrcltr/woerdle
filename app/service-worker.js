@@ -6,7 +6,7 @@
 // erhöhe die CACHE_VERSION (v1 -> v2). Dann wird neu gecacht.
 // ============================================================
 
-const CACHE_VERSION = "woerdle-v8";
+const CACHE_VERSION = "woerdle-v9";
 const DATEIEN = [
   "index.html",
   "style.css",
