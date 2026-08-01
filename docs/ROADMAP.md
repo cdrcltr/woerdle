@@ -48,9 +48,3 @@ Aktuell färbt der Code nur **grün** (richtige Stelle) oder **grau**. Es fehlt
 - [ ] Umlaute/ß erlauben (Ä, Ö, Ü, ß) – braucht etwas Umbau
 - [ ] „Wort des Tages" (für alle gleich, abhängig vom Datum)
 - [ ] (Ganz später) Java-Backend für Highscores / große Wortliste
-
----
-
-### Arbeitsablauf pro Punkt
-1. Einen Haken aussuchen. 2. Mit Claude Code umsetzen & verstehen.
-3. Testen. 4. `git commit`. 5. Tagebucheintrag. 6. Haken setzen. 🎉
