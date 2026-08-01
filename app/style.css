@@ -97,3 +97,15 @@ code {
   .raster { grid-template-columns: repeat(5, 52px); grid-auto-rows: 52px; }
   .feld { font-size: 1.6rem; }
 }
+
+.neustart {
+  margin-top: 8px;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--gruen);
+  cursor: pointer;
+}

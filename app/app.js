@@ -19,7 +19,7 @@ const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 
 // Zufälliges Zielwort aus der Liste (aus woerter.js).
-const ZIEL = WOERTER[Math.floor(Math.random() * WOERTER.length)];
+let ZIEL = WOERTER[Math.floor(Math.random() * WOERTER.length)];
 console.log("Zielwort (zum Testen):", ZIEL); // später entfernen
 
 // --- Zustand des Spiels ---
@@ -67,7 +67,6 @@ function eingabeAnzeigen() {
 // ------------------------------------------------------------
 function zeileAuswerten() {
   // --- Durchgang 0: Buchstaben des Zielworts zaehlen ---
-  // "rest" ist unser Zaehler - vergleichbar mit einer HashMap<Character,Integer> in Java.
   const rest = {};
   for (let i = 0; i < WORTLAENGE; i++) {
     const b = ZIEL[i];
@@ -77,18 +76,17 @@ function zeileAuswerten() {
     rest[b] = rest[b] + 1;
   }
 
-  // Pro Position merken wir uns erst die Farbe, bevor wir sie anzeigen.
   const ergebnis = new Array(WORTLAENGE);
 
-  // --- Durchgang 1: GRUEN (richtiger Buchstabe an richtiger Stelle) ---
+  // --- Durchgang 1: GRUEN ---
   for (let i = 0; i < WORTLAENGE; i++) {
     if (aktuelleEingabe[i] === ZIEL[i]) {
       ergebnis[i] = "gruen";
-      rest[aktuelleEingabe[i]] = rest[aktuelleEingabe[i]] - 1; // Buchstabe "verbraucht"
+      rest[aktuelleEingabe[i]] = rest[aktuelleEingabe[i]] - 1;
     }
   }
 
-  // --- Durchgang 2: GELB (kommt vor, aber woanders) oder GRAU ---
+  // --- Durchgang 2: GELB / GRAU ---
   for (let i = 0; i < WORTLAENGE; i++) {
     if (ergebnis[i] === undefined) {
       const b = aktuelleEingabe[i];
@@ -106,15 +104,46 @@ function zeileAuswerten() {
     felder[aktuelleZeile][i].classList.add(ergebnis[i]);
   }
 
-  // In die naechste Zeile wechseln
-  aktuelleZeile++;
-  aktuelleEingabe = "";
+  // --- M3: Gewinn / Niederlage pruefen ---
+  // Gewonnen, wenn die Eingabe exakt dem Zielwort entspricht.
+  const gewonnen = aktuelleEingabe === ZIEL;
 
-  // (M3 kommt spaeter: hier Gewinn bzw. Niederlage erkennen.)
-  if (aktuelleZeile >= MAX_VERSUCHE) {
+  aktuelleZeile++;
+
+  if (gewonnen) {
     spielVorbei = true;
-    document.getElementById("meldung").textContent =
-        "Alle Versuche verbraucht. Lösung: " + ZIEL;
+    document.getElementById("meldung").textContent = "Gewonnen! 🎉";
+    document.getElementById("neustart").hidden = false;
+  } else if (aktuelleZeile >= MAX_VERSUCHE) {
+    spielVorbei = true;
+    document.getElementById("meldung").textContent = "Verloren. Lösung: " + ZIEL;
+    document.getElementById("neustart").hidden = false;
+  }
+
+  aktuelleEingabe = "";
+}
+
+function neuesSpiel() {
+  // Neues Zufallswort
+  ZIEL = WOERTER[Math.floor(Math.random() * WOERTER.length)];
+  console.log("Zielwort (zum Testen):", ZIEL);
+
+  // Zustand zuruecksetzen
+  aktuelleZeile = 0;
+  aktuelleEingabe = "";
+  spielVorbei = false;
+
+  // Meldung + Button zuruecksetzen
+  document.getElementById("meldung").textContent = "";
+  document.getElementById("neustart").hidden = true;
+
+  // Raster leeren: Buchstaben und Farben von allen Feldern entfernen
+  for (let zeile = 0; zeile < MAX_VERSUCHE; zeile++) {
+    for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
+      const feld = felder[zeile][spalte];
+      feld.textContent = "";
+      feld.classList.remove("gruen", "gelb", "grau", "gefuellt");
+    }
   }
 }
 
@@ -155,6 +184,7 @@ function tastendruck(event) {
 // ------------------------------------------------------------
 rasterAufbauen();
 document.addEventListener("keydown", tastendruck);
+document.getElementById("neustart").addEventListener("click", neuesSpiel);
 
 // ------------------------------------------------------------
 // PWA: Service Worker registrieren (offline-fähig & installierbar)
