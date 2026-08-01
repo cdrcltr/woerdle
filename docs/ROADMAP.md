@@ -36,13 +36,13 @@ Aktuell färbt der Code nur **grün** (richtige Stelle) oder **grau**. Es fehlt
 - [x] Eingaben ablehnen, die nicht in der Liste stehen (kurze Meldung)
 
 ## M5 – Bildschirm-Tastatur (fürs Handy)
-- [ ] Tastatur unten einblenden (QWERTZ)
-- [ ] Tasten färben sich mit (grün/gelb/grau) passend zum Rateverlauf
+- [x] Tastatur unten einblenden (QWERTZ)
+- [x] Tasten färben sich mit (grün/gelb/grau) passend zum Rateverlauf
 
 ## M6 – Feinschliff & Statistik
-- [ ] Kleine Animation beim Aufdecken der Buchstaben
-- [ ] Statistik: gespielte Spiele, Siegquote, Streak (in `localStorage`)
-- [ ] „Ergebnis teilen" (die 🟩🟨⬜-Zeilen als Text kopieren)
+- [x] Kleine Animation beim Aufdecken der Buchstaben
+- [x] Statistik: gespielte Spiele, Siegquote, Streak (in `localStorage`)
+- [x] „Ergebnis teilen" (die 🟩🟨⬜-Zeilen als Text kopieren)
 
 ## M7 – Stretch: Umlaute & tägliches Wort
 - [ ] Umlaute/ß erlauben (Ä, Ö, Ü, ß) – braucht etwas Umbau

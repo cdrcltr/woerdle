@@ -26,6 +26,8 @@ console.log("Zielwort (zum Testen):", ZIEL); // später entfernen
 let aktuelleZeile = 0;    // welche Zeile gerade dran ist (0..5)
 let aktuelleEingabe = ""; // was in der aktuellen Zeile schon getippt wurde
 let spielVorbei = false;
+let verlauf = [];       // Farb-Ergebnisse aller Rateversuche (fuer die Teilen-Funktion)
+let teilenText = "";    // vorbereiteter Text fuer die Zwischenablage
 
 // felder[zeile][spalte] = das jeweilige <div>-Element im Raster
 const felder = [];
@@ -99,32 +101,120 @@ function zeileAuswerten() {
     }
   }
 
-  // --- Farben im Raster anzeigen ---
+  // --- Farben anzeigen + Aufdeck-Animation (M6) ---
   for (let i = 0; i < WORTLAENGE; i++) {
-    felder[aktuelleZeile][i].classList.add(ergebnis[i]);
+    const feld = felder[aktuelleZeile][i];
+    feld.classList.add(ergebnis[i]);
+    feld.style.animationDelay = (i * 0.2) + "s"; // gestaffelt aufdecken
+    feld.classList.add("aufgedeckt");
   }
 
-  // --- NEU (M5): passende Tasten auf der Bildschirm-Tastatur einfaerben ---
+  // --- Tasten auf der Bildschirm-Tastatur einfaerben (M5) ---
   for (let i = 0; i < WORTLAENGE; i++) {
     tasteEinfaerben(aktuelleEingabe[i], ergebnis[i]);
   }
 
-  // --- M3: Gewinn / Niederlage pruefen ---
-  const gewonnen = aktuelleEingabe === ZIEL;
+  // --- Verlauf merken (M6, fuer die Teilen-Funktion) ---
+  verlauf.push(ergebnis.slice());
 
+  // --- Gewinn / Niederlage ---
+  const gewonnen = aktuelleEingabe === ZIEL;
   aktuelleZeile++;
 
   if (gewonnen) {
-    spielVorbei = true;
     document.getElementById("meldung").textContent = "Gewonnen! 🎉";
-    document.getElementById("neustart").hidden = false;
+    spielBeenden(true);
   } else if (aktuelleZeile >= MAX_VERSUCHE) {
-    spielVorbei = true;
     document.getElementById("meldung").textContent = "Verloren. Lösung: " + ZIEL;
-    document.getElementById("neustart").hidden = false;
+    spielBeenden(false);
   }
 
   aktuelleEingabe = "";
+}
+
+const STAT_SCHLUESSEL = "woerdle-statistik";
+
+// Beendet das Spiel: Buttons zeigen, Teilen-Text bauen, Statistik aktualisieren.
+function spielBeenden(gewonnen) {
+  spielVorbei = true;
+  document.getElementById("neustart").hidden = false;
+  document.getElementById("teilen").hidden = false;
+
+  teilenText = baueTeilenText(gewonnen);
+
+  const stat = statistikAktualisieren(gewonnen);
+  statistikAnzeigen(stat);
+}
+
+// --- Statistik in localStorage ---
+function statistikLaden() {
+  const roh = localStorage.getItem(STAT_SCHLUESSEL);
+  if (roh === null) {
+    return { gespielt: 0, gewonnen: 0, streak: 0, maxStreak: 0 };
+  }
+  return JSON.parse(roh);
+}
+
+function statistikSpeichern(stat) {
+  localStorage.setItem(STAT_SCHLUESSEL, JSON.stringify(stat));
+}
+
+function statistikAktualisieren(hatGewonnen) {
+  const stat = statistikLaden();
+  stat.gespielt = stat.gespielt + 1;
+  if (hatGewonnen) {
+    stat.gewonnen = stat.gewonnen + 1;
+    stat.streak = stat.streak + 1;
+    if (stat.streak > stat.maxStreak) {
+      stat.maxStreak = stat.streak;
+    }
+  } else {
+    stat.streak = 0;
+  }
+  statistikSpeichern(stat);
+  return stat;
+}
+
+function statistikAnzeigen(stat) {
+  let quote = 0;
+  if (stat.gespielt > 0) {
+    quote = Math.round((stat.gewonnen / stat.gespielt) * 100);
+  }
+  document.getElementById("statistik").textContent =
+      "Gespielt: " + stat.gespielt +
+      " · Siege: " + stat.gewonnen + " (" + quote + "%)" +
+      " · Streak: " + stat.streak +
+      " · Beste: " + stat.maxStreak;
+}
+
+// --- Ergebnis teilen ---
+function baueTeilenText(gewonnen) {
+  let kopf;
+  if (gewonnen) {
+    kopf = "Wördle " + verlauf.length + "/6";
+  } else {
+    kopf = "Wördle X/6";
+  }
+  const zeilen = [];
+  for (const reihe of verlauf) {
+    let z = "";
+    for (const farbe of reihe) {
+      if (farbe === "gruen") {
+        z += "🟩";
+      } else if (farbe === "gelb") {
+        z += "🟨";
+      } else {
+        z += "⬜";
+      }
+    }
+    zeilen.push(z);
+  }
+  return kopf + "\n" + zeilen.join("\n");
+}
+
+function ergebnisTeilen() {
+  navigator.clipboard.writeText(teilenText);
+  document.getElementById("meldung").textContent = "Ergebnis kopiert! 📋";
 }
 
 function neuesSpiel() {
@@ -134,24 +224,30 @@ function neuesSpiel() {
   aktuelleZeile = 0;
   aktuelleEingabe = "";
   spielVorbei = false;
+  verlauf = [];
 
   document.getElementById("meldung").textContent = "";
   document.getElementById("neustart").hidden = true;
+  document.getElementById("teilen").hidden = true;
 
   // Raster leeren
   for (let zeile = 0; zeile < MAX_VERSUCHE; zeile++) {
     for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
       const feld = felder[zeile][spalte];
       feld.textContent = "";
-      feld.classList.remove("gruen", "gelb", "grau", "gefuellt");
+      feld.classList.remove("gruen", "gelb", "grau", "gefuellt", "aufgedeckt");
+      feld.style.animationDelay = "";
     }
   }
 
-  // NEU (M5): Tastatur-Farben zuruecksetzen
+  // Tastatur-Farben zuruecksetzen
   const tasten = document.querySelectorAll(".taste");
   for (const t of tasten) {
     t.classList.remove("gruen", "gelb", "grau");
   }
+
+  // Statistik-Anzeige aktualisieren (der Rekord bleibt sichtbar)
+  statistikAnzeigen(statistikLaden());
 }
 
 // ------------------------------------------------------------
@@ -253,6 +349,8 @@ rasterAufbauen();
 document.addEventListener("keydown", tastendruck);
 document.getElementById("neustart").addEventListener("click", neuesSpiel);
 tastaturAufbauen();
+document.getElementById("teilen").addEventListener("click", ergebnisTeilen);
+statistikAnzeigen(statistikLaden());   // Rekord schon beim Start anzeigen
 
 // ------------------------------------------------------------
 // PWA: Service Worker registrieren (offline-fähig & installierbar)
