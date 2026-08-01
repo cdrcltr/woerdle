@@ -11,10 +11,10 @@ Immer nur *einen* Punkt gleichzeitig angehen. Hak ab, was fertig ist.
 - [x] (Optional) Repo zu GitHub gepusht
 
 ## M1 – Eingabe rund machen
-- [ ] Buchstaben tippen füllt die aktuelle Zeile (ist schon da – Code lesen & verstehen!)
-- [ ] Backspace löscht den letzten Buchstaben (ist schon da)
-- [ ] Enter nur erlauben, wenn 5 Buchstaben eingegeben sind
-- [ ] Nach Enter in die nächste Zeile springen
+- [x] Buchstaben tippen füllt die aktuelle Zeile (ist schon da – Code lesen & verstehen!)
+- [x] Backspace löscht den letzten Buchstaben (ist schon da)
+- [x] Enter nur erlauben, wenn 5 Buchstaben eingegeben sind
+- [x] Nach Enter in die nächste Zeile springen
 
 ➡️ **Tagebucheintrag:** Verstehst du, wie die Zeile gefüllt wird?
 

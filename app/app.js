@@ -7,7 +7,7 @@
 //   - Mit Enter eine Zeile "abschicken" und einfach einfärben
 //
 // Was DU als Nächstes baust (siehe docs/ROADMAP.md):
-//   - M2: Farb-Logik richtig (gelb + doppelte Buchstaben)  <-- das Herzstück
+//   - M2: Farb-Logik richtig (gelb + doppelte Buchstaben)  ≤ das Herzstück
 //   - M3: Gewinnen / Verlieren erkennen
 //   - ...
 
@@ -53,7 +53,7 @@ function eingabeAnzeigen() {
   for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
     const feld = felder[aktuelleZeile][spalte];
     feld.textContent = aktuelleEingabe[spalte] || "";
-    // "gefuellt" nur fürs Styling (Rahmen hervorheben)
+    // "gefüllt" nur fürs Styling (Rahmen hervorheben)
     feld.classList.toggle("gefuellt", spalte < aktuelleEingabe.length);
   }
 }
@@ -101,9 +101,11 @@ function tastendruck(event) {
 
   if (taste === "Enter") {
     if (aktuelleEingabe.length === WORTLAENGE) {
+      document.getElementById("meldung").textContent = "";   // Meldung wegräumen
       zeileAuswerten();
+    } else {
+      document.getElementById("meldung").textContent = "Bitte 5 Buchstaben eingeben.";
     }
-    // sonst: noch nicht genug Buchstaben -> nichts tun
     return;
   }
 
@@ -116,6 +118,7 @@ function tastendruck(event) {
   // Nur einzelne Buchstaben A–Z zulassen
   if (/^[a-zA-Z]$/.test(taste) && aktuelleEingabe.length < WORTLAENGE) {
     aktuelleEingabe += taste.toUpperCase();
+    document.getElementById("meldung").textContent = "";   // beim Weitertippen weg
     eingabeAnzeigen();
   }
 }
