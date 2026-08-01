@@ -1,26 +1,36 @@
 // ============================================================
-// Wördle – app.js
+// Woerdle - app.js  (M1-M7 + Zusaetze:
+//   - Tagesspiel wird vollstaendig gespeichert & wiederhergestellt
+//   - einzelne Felder anklickbar, aktives Feld hervorgehoben
+//   - passt ohne Scrollen auf den Schirm (siehe style.css)
 // ============================================================
 
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
+const STAT_SCHLUESSEL = "woerdle-statistik";
+const TAG_SCHLUESSEL = "woerdle-taeglich";
 
-// Zufälliges Zielwort aus der Liste (aus woerter.js).
-let ZIEL = "";              // wird von spielStarten() gesetzt
-let modus = ladeModus();    // "taeglich" oder "endlos"
-
-// --- Zustand des Spiels ---
-let aktuelleZeile = 0;    // welche Zeile gerade dran ist (0..5)
-let aktuelleEingabe = ""; // was in der aktuellen Zeile schon getippt wurde
+// --- Zustand ---
+let ZIEL = "";                       // wird von spielStarten() gesetzt
+let modus = ladeModus();             // "taeglich" oder "endlos"
+let aktuelleZeile = 0;
+let zeileBuchstaben = ["", "", "", "", ""]; // Buchstaben der aktuellen Zeile
+let aktivesFeld = 0;                 // welches Feld gerade ausgewaehlt ist
 let spielVorbei = false;
-let verlauf = [];       // Farb-Ergebnisse aller Rateversuche (fuer die Teilen-Funktion)
-let teilenText = "";    // vorbereiteter Text fuer die Zwischenablage
-
-// felder[zeile][spalte] = das jeweilige <div>-Element im Raster
+let verlauf = [];                    // Farb-Ergebnisse aller Rateversuche
+let eingaben = [];                   // die getippten Woerter (fuer Speichern)
+let teilenText = "";
 const felder = [];
 
+// --- Tastatur-Layout (mit Umlauten) ---
+const TASTATUR_REIHEN = [
+  ["Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P", "Ü"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ö", "Ä"],
+  ["Enter", "Y", "X", "C", "V", "B", "N", "M", "Backspace"],
+];
+
 // ------------------------------------------------------------
-// Raster aufbauen: 6 Zeilen mit je 5 Feldern erzeugen
+// Raster aufbauen: Felder erzeugen und anklickbar machen
 // ------------------------------------------------------------
 function rasterAufbauen() {
   const raster = document.getElementById("raster");
@@ -29,6 +39,16 @@ function rasterAufbauen() {
     for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
       const feld = document.createElement("div");
       feld.className = "feld";
+      const z = zeile;
+      const s = spalte;
+      feld.addEventListener("click", () => {
+        // nur Felder der aktuellen Zeile lassen sich auswaehlen
+        if (spielVorbei) return;
+        if (z === aktuelleZeile) {
+          aktivesFeld = s;
+          eingabeAnzeigen();
+        }
+      });
       raster.appendChild(feld);
       felder[zeile][spalte] = feld;
     }
@@ -36,23 +56,131 @@ function rasterAufbauen() {
 }
 
 // ------------------------------------------------------------
-// Die aktuelle Zeile mit den getippten Buchstaben anzeigen
+// Aktuelle Zeile anzeigen + aktives Feld hervorheben
 // ------------------------------------------------------------
 function eingabeAnzeigen() {
   for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
     const feld = felder[aktuelleZeile][spalte];
-    feld.textContent = aktuelleEingabe[spalte] || "";
-    // "gefüllt" nur fürs Styling (Rahmen hervorheben)
-    feld.classList.toggle("gefuellt", spalte < aktuelleEingabe.length);
+    feld.textContent = zeileBuchstaben[spalte];
+    feld.classList.toggle("gefuellt", zeileBuchstaben[spalte] !== "");
+    feld.classList.toggle("aktiv-feld", spalte === aktivesFeld);
+  }
+}
+
+// naechstes leeres Feld: erst rechts vom aktiven, sonst von links, sonst bleiben
+function naechstesLeeresFeld() {
+  for (let i = aktivesFeld + 1; i < WORTLAENGE; i++) {
+    if (zeileBuchstaben[i] === "") return i;
+  }
+  for (let i = 0; i < WORTLAENGE; i++) {
+    if (zeileBuchstaben[i] === "") return i;
+  }
+  return aktivesFeld;
+}
+
+// ------------------------------------------------------------
+// Bildschirm-Tastatur
+// ------------------------------------------------------------
+function tastaturAufbauen() {
+  const tastatur = document.getElementById("tastatur");
+  for (const reihe of TASTATUR_REIHEN) {
+    const reiheDiv = document.createElement("div");
+    reiheDiv.className = "tasten-reihe";
+    for (const taste of reihe) {
+      const knopf = document.createElement("button");
+      knopf.className = "taste";
+      knopf.dataset.taste = taste;
+      if (taste === "Backspace") {
+        knopf.textContent = "⌫";
+        knopf.classList.add("taste-breit");
+      } else if (taste === "Enter") {
+        knopf.textContent = "Enter";
+        knopf.classList.add("taste-breit");
+      } else {
+        knopf.textContent = taste;
+      }
+      knopf.addEventListener("click", () => {
+        verarbeiteTaste(taste);
+        knopf.blur();
+      });
+      reiheDiv.appendChild(knopf);
+    }
+    tastatur.appendChild(reiheDiv);
+  }
+}
+
+function tasteEinfaerben(buchstabe, farbe) {
+  const knopf = document.querySelector('.taste[data-taste="' + buchstabe + '"]');
+  if (knopf === null) {
+    return;
+  }
+  if (knopf.classList.contains("gruen")) {
+    return;
+  }
+  if (farbe === "gruen") {
+    knopf.classList.remove("gelb", "grau");
+    knopf.classList.add("gruen");
+  } else if (farbe === "gelb") {
+    if (!knopf.classList.contains("gelb")) {
+      knopf.classList.remove("grau");
+      knopf.classList.add("gelb");
+    }
+  } else {
+    if (!knopf.classList.contains("gelb")) {
+      knopf.classList.add("grau");
+    }
   }
 }
 
 // ------------------------------------------------------------
-// Eine fertige Zeile auswerten und einfärben.
-//
+// Eingabe verarbeiten (echte Tastatur + Bildschirm-Tasten)
+// ------------------------------------------------------------
+function tastendruck(event) {
+  verarbeiteTaste(event.key);
+}
+
+function verarbeiteTaste(taste) {
+  if (spielVorbei) return;
+
+  if (taste === "Enter") {
+    const wort = zeileBuchstaben.join("");
+    if (wort.length < WORTLAENGE) {
+      document.getElementById("meldung").textContent = "Bitte alle 5 Felder ausfüllen.";
+    } else if (!ERLAUBTE.includes(wort)) {
+      document.getElementById("meldung").textContent = "Dieses Wort ist nicht in der Liste.";
+    } else {
+      document.getElementById("meldung").textContent = "";
+      zeileAuswerten();
+    }
+    return;
+  }
+
+  if (taste === "Backspace") {
+    if (zeileBuchstaben[aktivesFeld] !== "") {
+      zeileBuchstaben[aktivesFeld] = "";
+    } else if (aktivesFeld > 0) {
+      aktivesFeld = aktivesFeld - 1;
+      zeileBuchstaben[aktivesFeld] = "";
+    }
+    document.getElementById("meldung").textContent = "";
+    eingabeAnzeigen();
+    return;
+  }
+
+  if (/^[a-zA-ZäöüÄÖÜ]$/.test(taste)) {
+    zeileBuchstaben[aktivesFeld] = taste.toUpperCase();
+    aktivesFeld = naechstesLeeresFeld();
+    document.getElementById("meldung").textContent = "";
+    eingabeAnzeigen();
+  }
+}
+
+// ------------------------------------------------------------
+// Eine Zeile auswerten
 // ------------------------------------------------------------
 function zeileAuswerten() {
-  // --- Durchgang 0: Buchstaben des Zielworts zaehlen ---
+  const wort = zeileBuchstaben.join("");
+
   const rest = {};
   for (let i = 0; i < WORTLAENGE; i++) {
     const b = ZIEL[i];
@@ -63,19 +191,15 @@ function zeileAuswerten() {
   }
 
   const ergebnis = new Array(WORTLAENGE);
-
-  // --- Durchgang 1: GRUEN ---
   for (let i = 0; i < WORTLAENGE; i++) {
-    if (aktuelleEingabe[i] === ZIEL[i]) {
+    if (wort[i] === ZIEL[i]) {
       ergebnis[i] = "gruen";
-      rest[aktuelleEingabe[i]] = rest[aktuelleEingabe[i]] - 1;
+      rest[wort[i]] = rest[wort[i]] - 1;
     }
   }
-
-  // --- Durchgang 2: GELB / GRAU ---
   for (let i = 0; i < WORTLAENGE; i++) {
     if (ergebnis[i] === undefined) {
-      const b = aktuelleEingabe[i];
+      const b = wort[i];
       if (rest[b] > 0) {
         ergebnis[i] = "gelb";
         rest[b] = rest[b] - 1;
@@ -85,25 +209,24 @@ function zeileAuswerten() {
     }
   }
 
-  // --- Farben anzeigen + Aufdeck-Animation (M6) ---
   for (let i = 0; i < WORTLAENGE; i++) {
     const feld = felder[aktuelleZeile][i];
+    feld.classList.remove("gefuellt", "aktiv-feld");
     feld.classList.add(ergebnis[i]);
-    feld.style.animationDelay = (i * 0.2) + "s"; // gestaffelt aufdecken
+    feld.style.animationDelay = (i * 0.2) + "s";
     feld.classList.add("aufgedeckt");
   }
-
-  // --- Tasten auf der Bildschirm-Tastatur einfaerben (M5) ---
   for (let i = 0; i < WORTLAENGE; i++) {
-    tasteEinfaerben(aktuelleEingabe[i], ergebnis[i]);
+    tasteEinfaerben(wort[i], ergebnis[i]);
   }
 
-  // --- Verlauf merken (M6, fuer die Teilen-Funktion) ---
   verlauf.push(ergebnis.slice());
+  eingaben.push(wort);
 
-  // --- Gewinn / Niederlage ---
-  const gewonnen = aktuelleEingabe === ZIEL;
+  const gewonnen = wort === ZIEL;
   aktuelleZeile++;
+  zeileBuchstaben = ["", "", "", "", ""];
+  aktivesFeld = 0;
 
   if (gewonnen) {
     document.getElementById("meldung").textContent = "Gewonnen! 🎉";
@@ -111,14 +234,14 @@ function zeileAuswerten() {
   } else if (aktuelleZeile >= MAX_VERSUCHE) {
     document.getElementById("meldung").textContent = "Verloren. Lösung: " + ZIEL;
     spielBeenden(false);
+  } else {
+    if (modus === "taeglich") {
+      taeglichSpeichern(false, false); // Zwischenstand sichern
+    }
+    eingabeAnzeigen(); // neue Zeile: aktives Feld anzeigen
   }
-
-  aktuelleEingabe = "";
 }
 
-const STAT_SCHLUESSEL = "woerdle-statistik";
-
-// Beendet das Spiel: Buttons zeigen, Teilen-Text bauen, Statistik aktualisieren.
 function spielBeenden(gewonnen) {
   spielVorbei = true;
   teilenText = baueTeilenText(gewonnen);
@@ -129,14 +252,16 @@ function spielBeenden(gewonnen) {
   document.getElementById("teilen").hidden = false;
 
   if (modus === "taeglich") {
-    localStorage.setItem("woerdle-taeglich-erledigt", heuteText());
-    document.getElementById("neustart").hidden = true; // nur einmal am Tag
+    taeglichSpeichern(gewonnen, true);
+    document.getElementById("neustart").hidden = true;
   } else {
     document.getElementById("neustart").hidden = false;
   }
 }
 
-// --- Statistik in localStorage ---
+// ------------------------------------------------------------
+// Statistik (localStorage)
+// ------------------------------------------------------------
 function statistikLaden() {
   const roh = localStorage.getItem(STAT_SCHLUESSEL);
   if (roh === null) {
@@ -177,7 +302,9 @@ function statistikAnzeigen(stat) {
       " · Beste: " + stat.maxStreak;
 }
 
-// --- Ergebnis teilen ---
+// ------------------------------------------------------------
+// Ergebnis teilen
+// ------------------------------------------------------------
 function baueTeilenText(gewonnen) {
   let kopf;
   if (gewonnen) {
@@ -207,7 +334,9 @@ function ergebnisTeilen() {
   document.getElementById("meldung").textContent = "Ergebnis kopiert! 📋";
 }
 
-// --- Modus (taeglich / endlos) ---
+// ------------------------------------------------------------
+// Modus (taeglich / endlos)
+// ------------------------------------------------------------
 function ladeModus() {
   const m = localStorage.getItem("woerdle-modus");
   if (m === null) {
@@ -235,13 +364,14 @@ function modusAnzeigen() {
   }
 }
 
-// --- Datum-Helfer ---
+// ------------------------------------------------------------
+// Datum + Wort des Tages
+// ------------------------------------------------------------
 function heuteText() {
   const d = new Date();
   return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
 }
 
-// Waehlt fuer jeden Kalendertag dasselbe Wort.
 function wortDesTages() {
   const start = new Date(2026, 0, 1);
   const jetzt = new Date();
@@ -254,12 +384,75 @@ function wortDesTages() {
   return ZIELWOERTER[index];
 }
 
-// Setzt Raster, Tastatur und Zustand zurueck (ohne neues Wort zu waehlen).
+// ------------------------------------------------------------
+// Tagesspiel speichern / laden / wiederherstellen
+// ------------------------------------------------------------
+function taeglichSpeichern(gewonnen, beendet) {
+  const state = {
+    datum: heuteText(),
+    eingaben: eingaben,
+    verlauf: verlauf,
+    gewonnen: gewonnen,
+    beendet: beendet,
+  };
+  localStorage.setItem(TAG_SCHLUESSEL, JSON.stringify(state));
+}
+
+function taeglichLaden() {
+  const roh = localStorage.getItem(TAG_SCHLUESSEL);
+  if (roh === null) {
+    return null;
+  }
+  return JSON.parse(roh);
+}
+
+function taeglichWiederherstellen(state) {
+  // gespeicherte Zeilen wieder aufs Brett malen
+  for (let i = 0; i < state.eingaben.length; i++) {
+    const wort = state.eingaben[i];
+    const farben = state.verlauf[i];
+    for (let j = 0; j < WORTLAENGE; j++) {
+      const feld = felder[i][j];
+      feld.textContent = wort[j];
+      feld.classList.remove("aktiv-feld", "gefuellt");
+      feld.classList.add(farben[j]);
+    }
+    for (let j = 0; j < WORTLAENGE; j++) {
+      tasteEinfaerben(wort[j], farben[j]);
+    }
+    verlauf.push(farben);
+    eingaben.push(wort);
+  }
+  aktuelleZeile = state.eingaben.length;
+  zeileBuchstaben = ["", "", "", "", ""];
+  aktivesFeld = 0;
+
+  if (state.beendet) {
+    spielVorbei = true;
+    teilenText = baueTeilenText(state.gewonnen);
+    document.getElementById("teilen").hidden = false;
+    document.getElementById("neustart").hidden = true;
+    if (state.gewonnen) {
+      document.getElementById("meldung").textContent = "Gewonnen! 🎉 (Komm morgen wieder!)";
+    } else {
+      document.getElementById("meldung").textContent =
+          "Verloren. Lösung: " + ZIEL + " (Komm morgen wieder!)";
+    }
+  } else {
+    eingabeAnzeigen(); // Spiel war noch nicht fertig -> weiterspielen
+  }
+}
+
+// ------------------------------------------------------------
+// Brett zuruecksetzen + Spiel starten
+// ------------------------------------------------------------
 function boardZuruecksetzen() {
   aktuelleZeile = 0;
-  aktuelleEingabe = "";
+  zeileBuchstaben = ["", "", "", "", ""];
+  aktivesFeld = 0;
   spielVorbei = false;
   verlauf = [];
+  eingaben = [];
 
   document.getElementById("meldung").textContent = "";
   document.getElementById("neustart").hidden = true;
@@ -269,7 +462,7 @@ function boardZuruecksetzen() {
     for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
       const feld = felder[zeile][spalte];
       feld.textContent = "";
-      feld.classList.remove("gruen", "gelb", "grau", "gefuellt", "aufgedeckt");
+      feld.classList.remove("gruen", "gelb", "grau", "gefuellt", "aufgedeckt", "aktiv-feld");
       feld.style.animationDelay = "";
     }
   }
@@ -277,19 +470,19 @@ function boardZuruecksetzen() {
   for (const t of tasten) {
     t.classList.remove("gruen", "gelb", "grau");
   }
+
+  eingabeAnzeigen();
 }
 
-// Startet ein Spiel passend zum aktuellen Modus.
 function spielStarten() {
   boardZuruecksetzen();
 
   if (modus === "taeglich") {
     ZIEL = wortDesTages();
     console.log("Zielwort (heute):", ZIEL);
-    if (localStorage.getItem("woerdle-taeglich-erledigt") === heuteText()) {
-      spielVorbei = true;  // heute schon gespielt -> sperren
-      document.getElementById("meldung").textContent =
-          "Das heutige Wort hast du schon gespielt. Komm morgen wieder!";
+    const gespeichert = taeglichLaden();
+    if (gespeichert !== null && gespeichert.datum === heuteText()) {
+      taeglichWiederherstellen(gespeichert);
     }
   } else {
     ZIEL = ZIELWOERTER[Math.floor(Math.random() * ZIELWOERTER.length)];
@@ -297,98 +490,6 @@ function spielStarten() {
   }
 
   statistikAnzeigen(statistikLaden());
-}
-
-// ------------------------------------------------------------
-// Auf Tastendruck reagieren
-// ------------------------------------------------------------
-function tastendruck(event) {
-  verarbeiteTaste(event.key);
-}
-
-function verarbeiteTaste(taste) {
-  if (spielVorbei) return;
-
-  if (taste === "Enter") {
-    if (aktuelleEingabe.length < WORTLAENGE) {
-      document.getElementById("meldung").textContent = "Bitte 5 Buchstaben eingeben.";
-    } else if (!ERLAUBTE.includes(aktuelleEingabe)) {
-      document.getElementById("meldung").textContent = "Dieses Wort ist nicht in der Liste.";
-    } else {
-      document.getElementById("meldung").textContent = "";
-      zeileAuswerten();
-    }
-    return;
-  }
-
-  if (taste === "Backspace") {
-    aktuelleEingabe = aktuelleEingabe.slice(0, -1);
-    eingabeAnzeigen();
-    return;
-  }
-
-  if (/^[a-zA-ZäöüÄÖÜ]$/.test(taste) && aktuelleEingabe.length < WORTLAENGE) {
-    aktuelleEingabe += taste.toUpperCase();
-    document.getElementById("meldung").textContent = "";
-    eingabeAnzeigen();
-  }
-}
-
-const TASTATUR_REIHEN = [
-  ["Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P", "Ü"],
-  ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ö", "Ä"],
-  ["Enter", "Y", "X", "C", "V", "B", "N", "M", "Backspace"],
-];
-
-function tastaturAufbauen() {
-  const tastatur = document.getElementById("tastatur");
-  for (const reihe of TASTATUR_REIHEN) {
-    const reiheDiv = document.createElement("div");
-    reiheDiv.className = "tasten-reihe";
-    for (const taste of reihe) {
-      const knopf = document.createElement("button");
-      knopf.className = "taste";
-      knopf.dataset.taste = taste; // damit wir die Taste spaeter einfaerben koennen
-      if (taste === "Backspace") {
-        knopf.textContent = "⌫";
-        knopf.classList.add("taste-breit");
-      } else if (taste === "Enter") {
-        knopf.textContent = "Enter";
-        knopf.classList.add("taste-breit");
-      } else {
-        knopf.textContent = taste;
-      }
-      knopf.addEventListener("click", () => {
-        verarbeiteTaste(taste);
-        knopf.blur(); // Fokus loesen, sonst loest die echte Enter-Taste den Knopf erneut aus
-      });
-      reiheDiv.appendChild(knopf);
-    }
-    tastatur.appendChild(reiheDiv);
-  }
-}
-
-function tasteEinfaerben(buchstabe, farbe) {
-  const knopf = document.querySelector('.taste[data-taste="' + buchstabe + '"]');
-  if (knopf === null) {
-    return;
-  }
-  if (knopf.classList.contains("gruen")) {
-    return; // gruen hat hoechste Prioritaet und bleibt gruen
-  }
-  if (farbe === "gruen") {
-    knopf.classList.remove("gelb", "grau");
-    knopf.classList.add("gruen");
-  } else if (farbe === "gelb") {
-    if (!knopf.classList.contains("gelb")) {
-      knopf.classList.remove("grau");
-      knopf.classList.add("gelb");
-    }
-  } else {
-    if (!knopf.classList.contains("gelb")) {
-      knopf.classList.add("grau");
-    }
-  }
 }
 
 // ------------------------------------------------------------
@@ -405,16 +506,16 @@ modusAnzeigen();
 spielStarten();
 
 // ------------------------------------------------------------
-// PWA: Service Worker registrieren (offline-fähig & installierbar)
+// PWA: Service Worker
 // ------------------------------------------------------------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("service-worker.js")
-      .then(() => {
-        const el = document.getElementById("pwa-status");
-        if (el) el.textContent = "PWA aktiv ✓";
-      })
-      .catch((err) => console.error("Service Worker Fehler:", err));
+        .register("service-worker.js")
+        .then(() => {
+          const el = document.getElementById("pwa-status");
+          if (el) el.textContent = "PWA aktiv ✓";
+        })
+        .catch((err) => console.error("Service Worker Fehler:", err));
   });
 }

@@ -179,3 +179,30 @@ code {
   cursor: pointer;
 }
 .modus-knopf.aktiv { background: #4f46e5; border-color: transparent; }
+
+/* Aktives Feld hervorheben (anklickbar) */
+.feld.aktiv-feld {
+  border-color: #4f46e5;
+  box-shadow: inset 0 0 0 2px #4f46e5;
+}
+
+/* Alles ohne Scrollen auf den Schirm bringen */
+html, body { height: 100%; }
+body { height: 100dvh; overflow: hidden; }
+.app-header { padding: 8px; }
+.app-header h1 { font-size: 1.3rem; }
+main { min-height: 0; padding: 8px; gap: 2px; justify-content: flex-start; }
+.raster {
+  grid-template-columns: repeat(5, min(58px, 14vw));
+  grid-auto-rows: min(58px, 14vw);
+  margin-bottom: 8px;
+}
+.feld { font-size: min(2rem, 7.5vw); }
+.hint { display: none; }
+#tastatur { margin-top: 6px; }
+.taste { height: clamp(38px, 6.5vh, 48px); }
+.app-footer { display: none; }
+.raster { margin-bottom: 2px; }
+.meldung { min-height: 1.2em; margin: 0; }
+.statistik { margin-top: 2px; }
+#tastatur { margin-top: 4px; }
