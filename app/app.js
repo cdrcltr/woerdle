@@ -66,28 +66,55 @@ function eingabeAnzeigen() {
 //    Das baust du in M2 – dort wird's spannend mit doppelten Buchstaben!
 // ------------------------------------------------------------
 function zeileAuswerten() {
+  // --- Durchgang 0: Buchstaben des Zielworts zaehlen ---
+  // "rest" ist unser Zaehler - vergleichbar mit einer HashMap<Character,Integer> in Java.
+  const rest = {};
   for (let i = 0; i < WORTLAENGE; i++) {
-    const feld = felder[aktuelleZeile][i];
-    const buchstabe = aktuelleEingabe[i];
-    if (buchstabe === ZIEL[i]) {
-      feld.classList.add("gruen");
-    } else {
-      feld.classList.add("grau");
-      // TODO (M2): sonst prüfen, ob der Buchstabe woanders im Wort vorkommt
-      //            -> dann "gelb". Und doppelte Buchstaben richtig behandeln.
+    const b = ZIEL[i];
+    if (rest[b] === undefined) {
+      rest[b] = 0;
+    }
+    rest[b] = rest[b] + 1;
+  }
+
+  // Pro Position merken wir uns erst die Farbe, bevor wir sie anzeigen.
+  const ergebnis = new Array(WORTLAENGE);
+
+  // --- Durchgang 1: GRUEN (richtiger Buchstabe an richtiger Stelle) ---
+  for (let i = 0; i < WORTLAENGE; i++) {
+    if (aktuelleEingabe[i] === ZIEL[i]) {
+      ergebnis[i] = "gruen";
+      rest[aktuelleEingabe[i]] = rest[aktuelleEingabe[i]] - 1; // Buchstabe "verbraucht"
     }
   }
 
-  // In die nächste Zeile wechseln
+  // --- Durchgang 2: GELB (kommt vor, aber woanders) oder GRAU ---
+  for (let i = 0; i < WORTLAENGE; i++) {
+    if (ergebnis[i] === undefined) {
+      const b = aktuelleEingabe[i];
+      if (rest[b] > 0) {
+        ergebnis[i] = "gelb";
+        rest[b] = rest[b] - 1;
+      } else {
+        ergebnis[i] = "grau";
+      }
+    }
+  }
+
+  // --- Farben anzeigen ---
+  for (let i = 0; i < WORTLAENGE; i++) {
+    felder[aktuelleZeile][i].classList.add(ergebnis[i]);
+  }
+
+  // In die naechste Zeile wechseln
   aktuelleZeile++;
   aktuelleEingabe = "";
 
-  // TODO (M3): hier prüfen, ob gewonnen (alle grün) oder verloren
-  //            (aktuelleZeile === MAX_VERSUCHE) und Meldung anzeigen.
+  // (M3 kommt spaeter: hier Gewinn bzw. Niederlage erkennen.)
   if (aktuelleZeile >= MAX_VERSUCHE) {
     spielVorbei = true;
     document.getElementById("meldung").textContent =
-      "Alle Versuche verbraucht. Lösung: " + ZIEL;
+        "Alle Versuche verbraucht. Lösung: " + ZIEL;
   }
 }
 

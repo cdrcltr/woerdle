@@ -16,18 +16,14 @@ Immer nur *einen* Punkt gleichzeitig angehen. Hak ab, was fertig ist.
 - [x] Enter nur erlauben, wenn 5 Buchstaben eingegeben sind
 - [x] Nach Enter in die nächste Zeile springen
 
-➡️ **Tagebucheintrag:** Verstehst du, wie die Zeile gefüllt wird?
-
 ## M2 – Farb-Logik RICHTIG machen ⭐ (das Herzstück)
 Aktuell färbt der Code nur **grün** (richtige Stelle) oder **grau**. Es fehlt
 **gelb** – und der Knackpunkt sind **doppelte Buchstaben**.
-- [ ] Gelb: Buchstabe kommt im Wort vor, aber an anderer Stelle
-- [ ] Doppelte Buchstaben korrekt behandeln
+- [x] Gelb: Buchstabe kommt im Wort vor, aber an anderer Stelle
+- [x] Doppelte Buchstaben korrekt behandeln
       (Bsp.: Zielwort `OTTER`, geraten `TENOR` – nur so viele T/O/R/E einfärben,
        wie wirklich im Wort sind. Das ist die eigentliche Denksport-Aufgabe!)
-- [ ] Reihenfolge: erst alle Grünen bestimmen, dann die Gelben aus dem Rest
-
-➡️ **Entscheidung notieren**, wenn du einen Ansatz gewählt hast.
+- [x] Reihenfolge: erst alle Grünen bestimmen, dann die Gelben aus dem Rest
 
 ## M3 – Gewinnen & Verlieren
 - [ ] Alle 5 grün → „Gewonnen!" anzeigen
