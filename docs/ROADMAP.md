@@ -26,14 +26,14 @@ Aktuell färbt der Code nur **grün** (richtige Stelle) oder **grau**. Es fehlt
 - [x] Reihenfolge: erst alle Grünen bestimmen, dann die Gelben aus dem Rest
 
 ## M3 – Gewinnen & Verlieren
-- [ ] Alle 5 grün → „Gewonnen!" anzeigen
-- [ ] Nach 6 Fehlversuchen → Lösung zeigen, „Verloren"
-- [ ] Nach Spielende keine Eingabe mehr annehmen
-- [ ] Button „Nochmal spielen" (neues Zufallswort)
+- [x] Alle 5 grün → „Gewonnen!" anzeigen
+- [x] Nach 6 Fehlversuchen → Lösung zeigen, „Verloren"
+- [x] Nach Spielende keine Eingabe mehr annehmen
+- [x] Button „Nochmal spielen" (neues Zufallswort)
 
 ## M4 – Nur echte Wörter zulassen
-- [ ] Wortliste in `woerter.js` erweitern (mehr 5-Buchstaben-Wörter)
-- [ ] Eingaben ablehnen, die nicht in der Liste stehen (kurze Meldung)
+- [x] Wortliste in `woerter.js` erweitern (mehr 5-Buchstaben-Wörter)
+- [x] Eingaben ablehnen, die nicht in der Liste stehen (kurze Meldung)
 
 ## M5 – Bildschirm-Tastatur (fürs Handy)
 - [ ] Tastatur unten einblenden (QWERTZ)

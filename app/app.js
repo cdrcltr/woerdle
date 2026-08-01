@@ -156,11 +156,13 @@ function tastendruck(event) {
   const taste = event.key;
 
   if (taste === "Enter") {
-    if (aktuelleEingabe.length === WORTLAENGE) {
-      document.getElementById("meldung").textContent = "";   // Meldung wegräumen
-      zeileAuswerten();
-    } else {
+    if (aktuelleEingabe.length < WORTLAENGE) {
       document.getElementById("meldung").textContent = "Bitte 5 Buchstaben eingeben.";
+    } else if (!WOERTER.includes(aktuelleEingabe)) {
+      document.getElementById("meldung").textContent = "Dieses Wort ist nicht in der Liste.";
+    } else {
+      document.getElementById("meldung").textContent = "";
+      zeileAuswerten();
     }
     return;
   }
