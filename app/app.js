@@ -1,26 +1,13 @@
 // ============================================================
 // Wördle – app.js
-//
-// Was das Grundgerüst schon kann:
-//   - Raster (6 Zeilen x 5 Felder) aufbauen
-//   - Buchstaben tippen, mit Backspace löschen
-//   - Mit Enter eine Zeile "abschicken" und einfach einfärben
-//
-// Was DU als Nächstes baust (siehe docs/ROADMAP.md):
-//   - M2: Farb-Logik richtig (gelb + doppelte Buchstaben)  ≤ das Herzstück
-//   - M3: Gewinnen / Verlieren erkennen
-//   - ...
-
-
-//Test
 // ============================================================
 
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 
 // Zufälliges Zielwort aus der Liste (aus woerter.js).
-let ZIEL = WOERTER[Math.floor(Math.random() * WOERTER.length)];
-console.log("Zielwort (zum Testen):", ZIEL); // später entfernen
+let ZIEL = "";              // wird von spielStarten() gesetzt
+let modus = ladeModus();    // "taeglich" oder "endlos"
 
 // --- Zustand des Spiels ---
 let aktuelleZeile = 0;    // welche Zeile gerade dran ist (0..5)
@@ -63,9 +50,6 @@ function eingabeAnzeigen() {
 // ------------------------------------------------------------
 // Eine fertige Zeile auswerten und einfärben.
 //
-// ⚠️ VEREINFACHT: färbt nur GRÜN (richtige Stelle) oder GRAU.
-//    "Gelb" (Buchstabe kommt vor, aber woanders) fehlt noch.
-//    Das baust du in M2 – dort wird's spannend mit doppelten Buchstaben!
 // ------------------------------------------------------------
 function zeileAuswerten() {
   // --- Durchgang 0: Buchstaben des Zielworts zaehlen ---
@@ -137,13 +121,19 @@ const STAT_SCHLUESSEL = "woerdle-statistik";
 // Beendet das Spiel: Buttons zeigen, Teilen-Text bauen, Statistik aktualisieren.
 function spielBeenden(gewonnen) {
   spielVorbei = true;
-  document.getElementById("neustart").hidden = false;
-  document.getElementById("teilen").hidden = false;
-
   teilenText = baueTeilenText(gewonnen);
 
   const stat = statistikAktualisieren(gewonnen);
   statistikAnzeigen(stat);
+
+  document.getElementById("teilen").hidden = false;
+
+  if (modus === "taeglich") {
+    localStorage.setItem("woerdle-taeglich-erledigt", heuteText());
+    document.getElementById("neustart").hidden = true; // nur einmal am Tag
+  } else {
+    document.getElementById("neustart").hidden = false;
+  }
 }
 
 // --- Statistik in localStorage ---
@@ -217,10 +207,55 @@ function ergebnisTeilen() {
   document.getElementById("meldung").textContent = "Ergebnis kopiert! 📋";
 }
 
-function neuesSpiel() {
-  ZIEL = WOERTER[Math.floor(Math.random() * WOERTER.length)];
-  console.log("Zielwort (zum Testen):", ZIEL);
+// --- Modus (taeglich / endlos) ---
+function ladeModus() {
+  const m = localStorage.getItem("woerdle-modus");
+  if (m === null) {
+    return "endlos";
+  }
+  return m;
+}
 
+function modusSetzen(neu) {
+  modus = neu;
+  localStorage.setItem("woerdle-modus", neu);
+  modusAnzeigen();
+  spielStarten();
+}
+
+function modusAnzeigen() {
+  const bt = document.getElementById("modus-taeglich");
+  const be = document.getElementById("modus-endlos");
+  bt.classList.remove("aktiv");
+  be.classList.remove("aktiv");
+  if (modus === "taeglich") {
+    bt.classList.add("aktiv");
+  } else {
+    be.classList.add("aktiv");
+  }
+}
+
+// --- Datum-Helfer ---
+function heuteText() {
+  const d = new Date();
+  return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+}
+
+// Waehlt fuer jeden Kalendertag dasselbe Wort.
+function wortDesTages() {
+  const start = new Date(2026, 0, 1);
+  const jetzt = new Date();
+  const einTag = 1000 * 60 * 60 * 24;
+  const tage = Math.floor((jetzt - start) / einTag);
+  let index = tage % ZIELWOERTER.length;
+  if (index < 0) {
+    index = index + ZIELWOERTER.length;
+  }
+  return ZIELWOERTER[index];
+}
+
+// Setzt Raster, Tastatur und Zustand zurueck (ohne neues Wort zu waehlen).
+function boardZuruecksetzen() {
   aktuelleZeile = 0;
   aktuelleEingabe = "";
   spielVorbei = false;
@@ -230,7 +265,6 @@ function neuesSpiel() {
   document.getElementById("neustart").hidden = true;
   document.getElementById("teilen").hidden = true;
 
-  // Raster leeren
   for (let zeile = 0; zeile < MAX_VERSUCHE; zeile++) {
     for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
       const feld = felder[zeile][spalte];
@@ -239,14 +273,29 @@ function neuesSpiel() {
       feld.style.animationDelay = "";
     }
   }
-
-  // Tastatur-Farben zuruecksetzen
   const tasten = document.querySelectorAll(".taste");
   for (const t of tasten) {
     t.classList.remove("gruen", "gelb", "grau");
   }
+}
 
-  // Statistik-Anzeige aktualisieren (der Rekord bleibt sichtbar)
+// Startet ein Spiel passend zum aktuellen Modus.
+function spielStarten() {
+  boardZuruecksetzen();
+
+  if (modus === "taeglich") {
+    ZIEL = wortDesTages();
+    console.log("Zielwort (heute):", ZIEL);
+    if (localStorage.getItem("woerdle-taeglich-erledigt") === heuteText()) {
+      spielVorbei = true;  // heute schon gespielt -> sperren
+      document.getElementById("meldung").textContent =
+          "Das heutige Wort hast du schon gespielt. Komm morgen wieder!";
+    }
+  } else {
+    ZIEL = ZIELWOERTER[Math.floor(Math.random() * ZIELWOERTER.length)];
+    console.log("Zielwort (zum Testen):", ZIEL);
+  }
+
   statistikAnzeigen(statistikLaden());
 }
 
@@ -263,7 +312,7 @@ function verarbeiteTaste(taste) {
   if (taste === "Enter") {
     if (aktuelleEingabe.length < WORTLAENGE) {
       document.getElementById("meldung").textContent = "Bitte 5 Buchstaben eingeben.";
-    } else if (!WOERTER.includes(aktuelleEingabe)) {
+    } else if (!ERLAUBTE.includes(aktuelleEingabe)) {
       document.getElementById("meldung").textContent = "Dieses Wort ist nicht in der Liste.";
     } else {
       document.getElementById("meldung").textContent = "";
@@ -278,7 +327,7 @@ function verarbeiteTaste(taste) {
     return;
   }
 
-  if (/^[a-zA-Z]$/.test(taste) && aktuelleEingabe.length < WORTLAENGE) {
+  if (/^[a-zA-ZäöüÄÖÜ]$/.test(taste) && aktuelleEingabe.length < WORTLAENGE) {
     aktuelleEingabe += taste.toUpperCase();
     document.getElementById("meldung").textContent = "";
     eingabeAnzeigen();
@@ -286,8 +335,8 @@ function verarbeiteTaste(taste) {
 }
 
 const TASTATUR_REIHEN = [
-  ["Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P"],
-  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P", "Ü"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ö", "Ä"],
   ["Enter", "Y", "X", "C", "V", "B", "N", "M", "Backspace"],
 ];
 
@@ -346,11 +395,14 @@ function tasteEinfaerben(buchstabe, farbe) {
 // Start
 // ------------------------------------------------------------
 rasterAufbauen();
-document.addEventListener("keydown", tastendruck);
-document.getElementById("neustart").addEventListener("click", neuesSpiel);
 tastaturAufbauen();
+document.addEventListener("keydown", tastendruck);
+document.getElementById("neustart").addEventListener("click", spielStarten);
 document.getElementById("teilen").addEventListener("click", ergebnisTeilen);
-statistikAnzeigen(statistikLaden());   // Rekord schon beim Start anzeigen
+document.getElementById("modus-taeglich").addEventListener("click", () => modusSetzen("taeglich"));
+document.getElementById("modus-endlos").addEventListener("click", () => modusSetzen("endlos"));
+modusAnzeigen();
+spielStarten();
 
 // ------------------------------------------------------------
 // PWA: Service Worker registrieren (offline-fähig & installierbar)

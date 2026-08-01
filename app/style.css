@@ -167,3 +167,15 @@ code {
   font-size: 0.85rem;
   text-align: center;
 }
+
+.modus-wahl { display: flex; gap: 6px; margin-bottom: 14px; }
+.modus-knopf {
+  border: 1px solid var(--rahmen);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.modus-knopf.aktiv { background: #4f46e5; border-color: transparent; }
