@@ -384,6 +384,33 @@ function wortDesTages() {
   return ZIELWOERTER[index];
 }
 
+// --- "Lostrommel": jedes Zielwort einmal, dann Reset ---
+function ladeVerwendet() {
+  const roh = localStorage.getItem("woerdle-verwendet");
+  if (roh === null) {
+    return [];
+  }
+  return JSON.parse(roh);
+}
+
+function speichereVerwendet(liste) {
+  localStorage.setItem("woerdle-verwendet", JSON.stringify(liste));
+}
+
+function naechstesZielwort() {
+  let verwendet = ladeVerwendet();
+  let uebrig = ZIELWOERTER.filter((w) => !verwendet.includes(w));
+  if (uebrig.length === 0) {
+    // alle durch -> Trommel leeren und neu befuellen
+    verwendet = [];
+    uebrig = ZIELWOERTER.slice();
+  }
+  const wort = uebrig[Math.floor(Math.random() * uebrig.length)];
+  verwendet.push(wort);
+  speichereVerwendet(verwendet);
+  return wort;
+}
+
 // ------------------------------------------------------------
 // Tagesspiel speichern / laden / wiederherstellen
 // ------------------------------------------------------------
@@ -485,7 +512,7 @@ function spielStarten() {
       taeglichWiederherstellen(gespeichert);
     }
   } else {
-    ZIEL = ZIELWOERTER[Math.floor(Math.random() * ZIELWOERTER.length)];
+    ZIEL = naechstesZielwort();
     console.log("Zielwort (zum Testen):", ZIEL);
   }
 

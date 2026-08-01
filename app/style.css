@@ -206,3 +206,15 @@ main { min-height: 0; padding: 8px; gap: 2px; justify-content: flex-start; }
 .meldung { min-height: 1.2em; margin: 0; }
 .statistik { margin-top: 2px; }
 #tastatur { margin-top: 4px; }
+
+.app-header h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.logo {
+  height: 1.4em;
+  width: 1.4em;
+  border-radius: 6px;
+}
