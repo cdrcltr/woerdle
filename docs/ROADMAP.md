@@ -1,5 +1,5 @@
 # Roadmap – Wördle
-
+.
 Kleine Schritte, damit jeder abgeschlossene Punkt ein Erfolgserlebnis ist.
 Immer nur *einen* Punkt gleichzeitig angehen. Hak ab, was fertig ist.
 
