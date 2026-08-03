@@ -248,3 +248,14 @@ main { min-height: 0; padding: 8px; gap: 2px; justify-content: flex-start; }
   object-fit: cover;
   border-radius: 3px;
 }
+
+/* Weiße Katzen-Silhouette, links oben auf Höhe der Flagge */
+.katze-ecke {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  height: 24px;
+  width: auto;
+  pointer-events: none;
+}

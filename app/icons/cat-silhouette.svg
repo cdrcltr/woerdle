@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 60">
+  <!-- sitzender Koerper -->
+  <path fill="#ffffff" d="M24,20 C34,20 39,40 38,52 C38,56 34,58 24,58 C14,58 10,56 10,52 C9,40 14,20 24,20 Z"/>
+  <!-- Kopf -->
+  <circle fill="#ffffff" cx="24" cy="17" r="12"/>
+  <!-- Ohren -->
+  <path fill="#ffffff" d="M14,9 L10,0 L22,6 Z"/>
+  <path fill="#ffffff" d="M34,9 L38,0 L26,6 Z"/>
+  <!-- Schwanz, rechts hochgeschwungen -->
+  <path fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" d="M37,53 C49,51 50,37 41,33"/>
+</svg>
