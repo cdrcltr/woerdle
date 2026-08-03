@@ -47,7 +47,7 @@ const TASTATUR_EN = [
 
 // --- Zustand ---
 let sprache = ladeSprache();   // "de" oder "en"
-let modus = "taeglich";        // startet immer im Tagesmodus
+let modus = ladeModus();       // laufendes Endlos-Spiel? sonst Tagesmodus
 let ZIEL = "";
 let aktuelleZeile = 0;
 let zeileBuchstaben = ["", "", "", "", ""];
@@ -405,6 +405,18 @@ function uiTexteSetzen() {
 // ------------------------------------------------------------
 // Modus-Anzeige
 // ------------------------------------------------------------
+function ladeModus() {
+  // Wenn ein noch nicht beendetes Endlos-Spiel existiert, dort weitermachen -
+  // sonst im Tagesmodus starten.
+  const roh = localStorage.getItem("woerdle-endlos-" + sprache);
+  if (roh !== null) {
+    const s = JSON.parse(roh);
+    if (s.beendet === false) {
+      return "endlos";
+    }
+  }
+  return "taeglich";
+}
 function modusSetzen(neu) {
   modus = neu;
   modusAnzeigen();
