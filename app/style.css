@@ -259,3 +259,9 @@ main { min-height: 0; padding: 8px; gap: 2px; justify-content: flex-start; }
   width: auto;
   pointer-events: none;
 }
+
+/* Doppeltipp-Zoom auf dem Handy verhindern */
+body { touch-action: manipulation; }
+.taste, .feld, .modus-knopf, .neustart, .teilen, .sprache-knopf {
+  touch-action: manipulation;
+}
