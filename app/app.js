@@ -1,36 +1,82 @@
 // ============================================================
-// Woerdle - app.js  (M1-M7 + Zusaetze:
-//   - Tagesspiel wird vollstaendig gespeichert & wiederhergestellt
-//   - einzelne Felder anklickbar, aktives Feld hervorgehoben
-//   - passt ohne Scrollen auf den Schirm (siehe style.css)
+// Woerdle - app.js
+// Features: Tages- & Endlos-Modus (beide werden gespeichert),
+// Lostrommel, anklickbare Felder, Statistik, Teilen,
+// Deutsch/Englisch umschaltbar.
 // ============================================================
 
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 const STAT_SCHLUESSEL = "woerdle-statistik";
-const TAG_SCHLUESSEL = "woerdle-taeglich";
 
-// --- Zustand ---
-let ZIEL = "";                       // wird von spielStarten() gesetzt
-let modus = "taeglich";            // "taeglich" oder "endlos"
-let aktuelleZeile = 0;
-let zeileBuchstaben = ["", "", "", "", ""]; // Buchstaben der aktuellen Zeile
-let aktivesFeld = 0;                 // welches Feld gerade ausgewaehlt ist
-let spielVorbei = false;
-let verlauf = [];                    // Farb-Ergebnisse aller Rateversuche
-let eingaben = [];                   // die getippten Woerter (fuer Speichern)
-let teilenText = "";
-const felder = [];
+// --- Texte je Sprache ---
+const TEXTE = {
+  de: {
+    daily: "Tägliches Wort", endless: "Endlos",
+    fill5: "Bitte alle 5 Felder ausfüllen.",
+    notinlist: "Dieses Wort ist nicht in der Liste.",
+    won: "Gewonnen! 🎉", lost: "Verloren. Lösung: ",
+    comeback: " (Komm morgen wieder!)", copied: "Ergebnis kopiert! 📋",
+    share: "Ergebnis kopieren", again: "Nochmal spielen",
+    played: "Gespielt", wins: "Siege", streak: "Streak", best: "Beste",
+    shareTitle: "Wördle", langBtn: "EN",
+  },
+  en: {
+    daily: "Daily word", endless: "Endless",
+    fill5: "Please fill all 5 boxes.",
+    notinlist: "This word is not in the list.",
+    won: "You won! 🎉", lost: "You lost. Answer: ",
+    comeback: " (Come back tomorrow!)", copied: "Result copied! 📋",
+    share: "Copy result", again: "Play again",
+    played: "Played", wins: "Wins", streak: "Streak", best: "Best",
+    shareTitle: "Wordle", langBtn: "DE",
+  },
+};
 
-// --- Tastatur-Layout (mit Umlauten) ---
-const TASTATUR_REIHEN = [
+// --- Tastatur-Layouts ---
+const TASTATUR_DE = [
   ["Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P", "Ü"],
   ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ö", "Ä"],
   ["Enter", "Y", "X", "C", "V", "B", "N", "M", "Backspace"],
 ];
+const TASTATUR_EN = [
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["Enter", "Z", "X", "C", "V", "B", "N", "M", "Backspace"],
+];
+
+// --- Zustand ---
+let sprache = ladeSprache();   // "de" oder "en"
+let modus = "taeglich";        // startet immer im Tagesmodus
+let ZIEL = "";
+let aktuelleZeile = 0;
+let zeileBuchstaben = ["", "", "", "", ""];
+let aktivesFeld = 0;
+let spielVorbei = false;
+let verlauf = [];
+let eingaben = [];
+let teilenText = "";
+const felder = [];
+
+// --- kleine Helfer ---
+function t(schluessel) {
+  return TEXTE[sprache][schluessel];
+}
+function zielListe() {
+  if (sprache === "en") { return ZIELWOERTER_EN; }
+  return ZIELWOERTER;
+}
+function erlaubtListe() {
+  if (sprache === "en") { return ERLAUBTE_EN; }
+  return ERLAUBTE;
+}
+function tastaturLayout() {
+  if (sprache === "en") { return TASTATUR_EN; }
+  return TASTATUR_DE;
+}
 
 // ------------------------------------------------------------
-// Raster aufbauen: Felder erzeugen und anklickbar machen
+// Raster
 // ------------------------------------------------------------
 function rasterAufbauen() {
   const raster = document.getElementById("raster");
@@ -42,7 +88,6 @@ function rasterAufbauen() {
       const z = zeile;
       const s = spalte;
       feld.addEventListener("click", () => {
-        // nur Felder der aktuellen Zeile lassen sich auswaehlen
         if (spielVorbei) return;
         if (z === aktuelleZeile) {
           aktivesFeld = s;
@@ -55,9 +100,6 @@ function rasterAufbauen() {
   }
 }
 
-// ------------------------------------------------------------
-// Aktuelle Zeile anzeigen + aktives Feld hervorheben
-// ------------------------------------------------------------
 function eingabeAnzeigen() {
   for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
     const feld = felder[aktuelleZeile][spalte];
@@ -67,7 +109,6 @@ function eingabeAnzeigen() {
   }
 }
 
-// naechstes leeres Feld: erst rechts vom aktiven, sonst von links, sonst bleiben
 function naechstesLeeresFeld() {
   for (let i = aktivesFeld + 1; i < WORTLAENGE; i++) {
     if (zeileBuchstaben[i] === "") return i;
@@ -83,7 +124,8 @@ function naechstesLeeresFeld() {
 // ------------------------------------------------------------
 function tastaturAufbauen() {
   const tastatur = document.getElementById("tastatur");
-  for (const reihe of TASTATUR_REIHEN) {
+  tastatur.innerHTML = "";
+  for (const reihe of tastaturLayout()) {
     const reiheDiv = document.createElement("div");
     reiheDiv.className = "tasten-reihe";
     for (const taste of reihe) {
@@ -133,7 +175,7 @@ function tasteEinfaerben(buchstabe, farbe) {
 }
 
 // ------------------------------------------------------------
-// Eingabe verarbeiten (echte Tastatur + Bildschirm-Tasten)
+// Eingabe
 // ------------------------------------------------------------
 function tastendruck(event) {
   verarbeiteTaste(event.key);
@@ -145,9 +187,9 @@ function verarbeiteTaste(taste) {
   if (taste === "Enter") {
     const wort = zeileBuchstaben.join("");
     if (wort.length < WORTLAENGE) {
-      document.getElementById("meldung").textContent = "Bitte alle 5 Felder ausfüllen.";
-    } else if (!ERLAUBTE.includes(wort)) {
-      document.getElementById("meldung").textContent = "Dieses Wort ist nicht in der Liste.";
+      document.getElementById("meldung").textContent = t("fill5");
+    } else if (!erlaubtListe().includes(wort)) {
+      document.getElementById("meldung").textContent = t("notinlist");
     } else {
       document.getElementById("meldung").textContent = "";
       zeileAuswerten();
@@ -176,7 +218,7 @@ function verarbeiteTaste(taste) {
 }
 
 // ------------------------------------------------------------
-// Eine Zeile auswerten
+// Auswertung
 // ------------------------------------------------------------
 function zeileAuswerten() {
   const wort = zeileBuchstaben.join("");
@@ -229,30 +271,25 @@ function zeileAuswerten() {
   aktivesFeld = 0;
 
   if (gewonnen) {
-    document.getElementById("meldung").textContent = "Gewonnen! 🎉";
+    document.getElementById("meldung").textContent = t("won");
     spielBeenden(true);
   } else if (aktuelleZeile >= MAX_VERSUCHE) {
-    document.getElementById("meldung").textContent = "Verloren. Lösung: " + ZIEL;
+    document.getElementById("meldung").textContent = t("lost") + ZIEL;
     spielBeenden(false);
   } else {
-    if (modus === "taeglich") {
-      taeglichSpeichern(false, false); // Zwischenstand sichern
-    }
-    eingabeAnzeigen(); // neue Zeile: aktives Feld anzeigen
+    spielSpeichern(false, false);
+    eingabeAnzeigen();
   }
 }
 
 function spielBeenden(gewonnen) {
   spielVorbei = true;
   teilenText = baueTeilenText(gewonnen);
-
   const stat = statistikAktualisieren(gewonnen);
   statistikAnzeigen(stat);
-
   document.getElementById("teilen").hidden = false;
-
+  spielSpeichern(gewonnen, true);
   if (modus === "taeglich") {
-    taeglichSpeichern(gewonnen, true);
     document.getElementById("neustart").hidden = true;
   } else {
     document.getElementById("neustart").hidden = false;
@@ -260,7 +297,7 @@ function spielBeenden(gewonnen) {
 }
 
 // ------------------------------------------------------------
-// Statistik (localStorage)
+// Statistik
 // ------------------------------------------------------------
 function statistikLaden() {
   const roh = localStorage.getItem(STAT_SCHLUESSEL);
@@ -269,11 +306,9 @@ function statistikLaden() {
   }
   return JSON.parse(roh);
 }
-
 function statistikSpeichern(stat) {
   localStorage.setItem(STAT_SCHLUESSEL, JSON.stringify(stat));
 }
-
 function statistikAktualisieren(hatGewonnen) {
   const stat = statistikLaden();
   stat.gespielt = stat.gespielt + 1;
@@ -289,28 +324,27 @@ function statistikAktualisieren(hatGewonnen) {
   statistikSpeichern(stat);
   return stat;
 }
-
 function statistikAnzeigen(stat) {
   let quote = 0;
   if (stat.gespielt > 0) {
     quote = Math.round((stat.gewonnen / stat.gespielt) * 100);
   }
   document.getElementById("statistik").textContent =
-      "Gespielt: " + stat.gespielt +
-      " · Siege: " + stat.gewonnen + " (" + quote + "%)" +
-      " · Streak: " + stat.streak +
-      " · Beste: " + stat.maxStreak;
+    t("played") + ": " + stat.gespielt +
+    " · " + t("wins") + ": " + stat.gewonnen + " (" + quote + "%)" +
+    " · " + t("streak") + ": " + stat.streak +
+    " · " + t("best") + ": " + stat.maxStreak;
 }
 
 // ------------------------------------------------------------
-// Ergebnis teilen
+// Teilen
 // ------------------------------------------------------------
 function baueTeilenText(gewonnen) {
   let kopf;
   if (gewonnen) {
-    kopf = "Wördle " + verlauf.length + "/6";
+    kopf = t("shareTitle") + " " + verlauf.length + "/6";
   } else {
-    kopf = "Wördle X/6";
+    kopf = t("shareTitle") + " X/6";
   }
   const zeilen = [];
   for (const reihe of verlauf) {
@@ -328,30 +362,54 @@ function baueTeilenText(gewonnen) {
   }
   return kopf + "\n" + zeilen.join("\n");
 }
-
 function ergebnisTeilen() {
   navigator.clipboard.writeText(teilenText);
-  document.getElementById("meldung").textContent = "Ergebnis kopiert! 📋";
+  document.getElementById("meldung").textContent = t("copied");
 }
 
 // ------------------------------------------------------------
-// Modus (taeglich / endlos)
+// Sprache
 // ------------------------------------------------------------
-function ladeModus() {
-  const m = localStorage.getItem("woerdle-modus");
-  if (m === null) {
-    return "endlos";
+function ladeSprache() {
+  const s = localStorage.getItem("woerdle-sprache");
+  if (s === null) {
+    return "de";
   }
-  return m;
+  return s;
+}
+function spracheUmschalten() {
+  if (sprache === "de") {
+    sprache = "en";
+  } else {
+    sprache = "de";
+  }
+  localStorage.setItem("woerdle-sprache", sprache);
+  tastaturAufbauen();
+  uiTexteSetzen();
+  spielStarten();
+}
+function uiTexteSetzen() {
+  document.getElementById("modus-taeglich").textContent = t("daily");
+  document.getElementById("modus-endlos").textContent = t("endless");
+  document.getElementById("teilen").textContent = t("share");
+  document.getElementById("neustart").textContent = t("again");
+  let flagge;
+  if (sprache === "de") {
+    flagge = "icons/flag-de.svg";
+  } else {
+    flagge = "icons/flag-gb.svg";
+  }
+  document.getElementById("sprache-flagge").src = flagge;
 }
 
+// ------------------------------------------------------------
+// Modus-Anzeige
+// ------------------------------------------------------------
 function modusSetzen(neu) {
   modus = neu;
-  localStorage.setItem("woerdle-modus", neu);
   modusAnzeigen();
   spielStarten();
 }
-
 function modusAnzeigen() {
   const bt = document.getElementById("modus-taeglich");
   const be = document.getElementById("modus-endlos");
@@ -365,45 +423,44 @@ function modusAnzeigen() {
 }
 
 // ------------------------------------------------------------
-// Datum + Wort des Tages
+// Datum + Wort des Tages + Lostrommel
 // ------------------------------------------------------------
 function heuteText() {
   const d = new Date();
   return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
 }
-
 function wortDesTages() {
+  const liste = zielListe();
   const start = new Date(2026, 0, 1);
   const jetzt = new Date();
   const einTag = 1000 * 60 * 60 * 24;
   const tage = Math.floor((jetzt - start) / einTag);
-  let index = tage % ZIELWOERTER.length;
+  let index = tage % liste.length;
   if (index < 0) {
-    index = index + ZIELWOERTER.length;
+    index = index + liste.length;
   }
-  return ZIELWOERTER[index];
+  return liste[index];
 }
-
-// --- "Lostrommel": jedes Zielwort einmal, dann Reset ---
+function verwendetSchluessel() {
+  return "woerdle-verwendet-" + sprache;
+}
 function ladeVerwendet() {
-  const roh = localStorage.getItem("woerdle-verwendet");
+  const roh = localStorage.getItem(verwendetSchluessel());
   if (roh === null) {
     return [];
   }
   return JSON.parse(roh);
 }
-
 function speichereVerwendet(liste) {
-  localStorage.setItem("woerdle-verwendet", JSON.stringify(liste));
+  localStorage.setItem(verwendetSchluessel(), JSON.stringify(liste));
 }
-
 function naechstesZielwort() {
+  const liste = zielListe();
   let verwendet = ladeVerwendet();
-  let uebrig = ZIELWOERTER.filter((w) => !verwendet.includes(w));
+  let uebrig = liste.filter((w) => !verwendet.includes(w));
   if (uebrig.length === 0) {
-    // alle durch -> Trommel leeren und neu befuellen
     verwendet = [];
-    uebrig = ZIELWOERTER.slice();
+    uebrig = liste.slice();
   }
   const wort = uebrig[Math.floor(Math.random() * uebrig.length)];
   verwendet.push(wort);
@@ -412,29 +469,32 @@ function naechstesZielwort() {
 }
 
 // ------------------------------------------------------------
-// Tagesspiel speichern / laden / wiederherstellen
+// Spielstand speichern / laden / wiederherstellen (beide Modi)
 // ------------------------------------------------------------
-function taeglichSpeichern(gewonnen, beendet) {
+function spielSchluessel() {
+  return "woerdle-" + modus + "-" + sprache;
+}
+function spielSpeichern(gewonnen, beendet) {
   const state = {
-    datum: heuteText(),
+    ziel: ZIEL,
     eingaben: eingaben,
     verlauf: verlauf,
     gewonnen: gewonnen,
     beendet: beendet,
   };
-  localStorage.setItem(TAG_SCHLUESSEL, JSON.stringify(state));
+  if (modus === "taeglich") {
+    state.datum = heuteText();
+  }
+  localStorage.setItem(spielSchluessel(), JSON.stringify(state));
 }
-
-function taeglichLaden() {
-  const roh = localStorage.getItem(TAG_SCHLUESSEL);
+function ladeSpielstand() {
+  const roh = localStorage.getItem(spielSchluessel());
   if (roh === null) {
     return null;
   }
   return JSON.parse(roh);
 }
-
-function taeglichWiederherstellen(state) {
-  // gespeicherte Zeilen wieder aufs Brett malen
+function spielstandWiederherstellen(state) {
   for (let i = 0; i < state.eingaben.length; i++) {
     const wort = state.eingaben[i];
     const farben = state.verlauf[i];
@@ -458,15 +518,20 @@ function taeglichWiederherstellen(state) {
     spielVorbei = true;
     teilenText = baueTeilenText(state.gewonnen);
     document.getElementById("teilen").hidden = false;
-    document.getElementById("neustart").hidden = true;
-    if (state.gewonnen) {
-      document.getElementById("meldung").textContent = "Gewonnen! 🎉 (Komm morgen wieder!)";
+    let zusatz = "";
+    if (modus === "taeglich") {
+      document.getElementById("neustart").hidden = true;
+      zusatz = t("comeback");
     } else {
-      document.getElementById("meldung").textContent =
-          "Verloren. Lösung: " + ZIEL + " (Komm morgen wieder!)";
+      document.getElementById("neustart").hidden = false;
+    }
+    if (state.gewonnen) {
+      document.getElementById("meldung").textContent = t("won") + zusatz;
+    } else {
+      document.getElementById("meldung").textContent = t("lost") + ZIEL + zusatz;
     }
   } else {
-    eingabeAnzeigen(); // Spiel war noch nicht fertig -> weiterspielen
+    eingabeAnzeigen();
   }
 }
 
@@ -494,8 +559,8 @@ function boardZuruecksetzen() {
     }
   }
   const tasten = document.querySelectorAll(".taste");
-  for (const t of tasten) {
-    t.classList.remove("gruen", "gelb", "grau");
+  for (const tk of tasten) {
+    tk.classList.remove("gruen", "gelb", "grau");
   }
 
   eingabeAnzeigen();
@@ -503,19 +568,32 @@ function boardZuruecksetzen() {
 
 function spielStarten() {
   boardZuruecksetzen();
+  const g = ladeSpielstand();
 
   if (modus === "taeglich") {
     ZIEL = wortDesTages();
-    console.log("Zielwort (heute):", ZIEL);
-    const gespeichert = taeglichLaden();
-    if (gespeichert !== null && gespeichert.datum === heuteText()) {
-      taeglichWiederherstellen(gespeichert);
+    if (g !== null && g.datum === heuteText()) {
+      ZIEL = g.ziel;
+      spielstandWiederherstellen(g);
     }
   } else {
-    ZIEL = naechstesZielwort();
-    console.log("Zielwort (zum Testen):", ZIEL);
+    if (g !== null) {
+      ZIEL = g.ziel;
+      spielstandWiederherstellen(g);
+    } else {
+      ZIEL = naechstesZielwort();
+    }
   }
+  console.log("Zielwort:", ZIEL);
+  statistikAnzeigen(statistikLaden());
+}
 
+// "Weiterspielen" im Endlos-Modus: alten Stand verwerfen, neues Wort
+function neuesEndlosSpiel() {
+  localStorage.removeItem(spielSchluessel());
+  boardZuruecksetzen();
+  ZIEL = naechstesZielwort();
+  console.log("Zielwort:", ZIEL);
   statistikAnzeigen(statistikLaden());
 }
 
@@ -525,24 +603,26 @@ function spielStarten() {
 rasterAufbauen();
 tastaturAufbauen();
 document.addEventListener("keydown", tastendruck);
-document.getElementById("neustart").addEventListener("click", spielStarten);
+document.getElementById("neustart").addEventListener("click", neuesEndlosSpiel);
 document.getElementById("teilen").addEventListener("click", ergebnisTeilen);
 document.getElementById("modus-taeglich").addEventListener("click", () => modusSetzen("taeglich"));
 document.getElementById("modus-endlos").addEventListener("click", () => modusSetzen("endlos"));
+document.getElementById("sprache").addEventListener("click", spracheUmschalten);
+uiTexteSetzen();
 modusAnzeigen();
 spielStarten();
 
 // ------------------------------------------------------------
-// PWA: Service Worker
+// PWA
 // ------------------------------------------------------------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-        .register("service-worker.js")
-        .then(() => {
-          const el = document.getElementById("pwa-status");
-          if (el) el.textContent = "PWA aktiv ✓";
-        })
-        .catch((err) => console.error("Service Worker Fehler:", err));
+      .register("service-worker.js")
+      .then(() => {
+        const el = document.getElementById("pwa-status");
+        if (el) el.textContent = "PWA aktiv ✓";
+      })
+      .catch((err) => console.error("Service Worker Fehler:", err));
   });
 }

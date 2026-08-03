@@ -226,3 +226,25 @@ main { min-height: 0; padding: 8px; gap: 2px; justify-content: flex-start; }
   flex: 1 1 0;
 }
 .taste-breit { font-size: 1rem; }
+
+/* Sprach-Knopf mit Flagge, rechts oben in der Kopfzeile */
+.app-header { position: relative; }
+.sprache-knopf {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  padding: 2px;
+  border: 1px solid var(--rahmen);
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+.sprache-knopf img {
+  width: 30px;
+  height: 20px;
+  display: block;
+  object-fit: cover;
+  border-radius: 3px;
+}
