@@ -201,7 +201,17 @@ main { min-height: 0; padding: 8px; gap: 2px; justify-content: flex-start; }
 .hint { display: none; }
 #tastatur { margin-top: 6px; }
 .taste { height: clamp(38px, 6.5vh, 48px); }
-.app-footer { display: none; }
+.app-footer {
+  display: block;
+  position: fixed;
+  bottom: 2px;
+  right: 6px;
+  padding: 0;
+  margin: 0;
+  font-size: 0.62rem;
+  color: #555;
+  pointer-events: none;
+}
 .raster { margin-bottom: 2px; }
 .meldung { min-height: 1.2em; margin: 0; }
 .statistik { margin-top: 2px; }

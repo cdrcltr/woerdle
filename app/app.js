@@ -8,6 +8,7 @@
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 const STAT_SCHLUESSEL = "woerdle-statistik";
+const APP_VERSION = "1.3";   // bei jedem Release hochzaehlen
 
 // --- Texte je Sprache ---
 const TEXTE = {
@@ -702,6 +703,7 @@ document.getElementById("sprache").addEventListener("click", spracheUmschalten);
 uiTexteSetzen();
 modusAnzeigen();
 spielStarten();
+document.getElementById("pwa-status").textContent = "v" + APP_VERSION;
 
 // ------------------------------------------------------------
 // PWA
@@ -712,7 +714,7 @@ if ("serviceWorker" in navigator) {
       .register("service-worker.js")
       .then(() => {
         const el = document.getElementById("pwa-status");
-        if (el) el.textContent = "PWA aktiv ✓";
+        if (el) el.textContent = "v" + APP_VERSION + " ✓";
       })
       .catch((err) => console.error("Service Worker Fehler:", err));
   });
