@@ -20,6 +20,9 @@ const TEXTE = {
     share: "Ergebnis kopieren", again: "Nochmal spielen",
     played: "Gespielt", wins: "Siege", streak: "Streak", best: "Beste",
     shareTitle: "Wördle", langBtn: "EN",
+    newDaily: "Neues Tagesrätsel verfügbar!",
+    continueBtn: "Weiterspielen", newWordBtn: "Neues Wort",
+    todayWordBtn: "Heutiges Wort", oldFinished: "Altes Spiel beendet.",
   },
   en: {
     daily: "Daily word", endless: "Endless",
@@ -30,6 +33,9 @@ const TEXTE = {
     share: "Copy result", again: "Play again",
     played: "Played", wins: "Wins", streak: "Streak", best: "Best",
     shareTitle: "Wordle", langBtn: "DE",
+    newDaily: "New daily puzzle available!",
+    continueBtn: "Continue", newWordBtn: "New word",
+    todayWordBtn: "Today's word", oldFinished: "Old game finished.",
   },
 };
 
@@ -56,6 +62,7 @@ let spielVorbei = false;
 let verlauf = [];
 let eingaben = [];
 let teilenText = "";
+let tagesDatum = "";           // Datum, zu dem das aktuelle Tagesspiel gehoert
 const felder = [];
 
 // --- kleine Helfer ---
@@ -291,6 +298,10 @@ function spielBeenden(gewonnen) {
   spielSpeichern(gewonnen, true);
   if (modus === "taeglich") {
     document.getElementById("neustart").hidden = true;
+    if (tagesDatum !== heuteText()) {
+      // altes Tagesspiel beendet -> heutiges Wort anbieten
+      tagesFrageZeigen(t("oldFinished"), t("todayWordBtn"), function () { neuesTageswort(); }, null, null);
+    }
   } else {
     document.getElementById("neustart").hidden = false;
   }
@@ -495,7 +506,7 @@ function spielSpeichern(gewonnen, beendet) {
     beendet: beendet,
   };
   if (modus === "taeglich") {
-    state.datum = heuteText();
+    state.datum = tagesDatum;
   }
   localStorage.setItem(spielSchluessel(), JSON.stringify(state));
 }
@@ -561,6 +572,7 @@ function boardZuruecksetzen() {
   document.getElementById("meldung").textContent = "";
   document.getElementById("neustart").hidden = true;
   document.getElementById("teilen").hidden = true;
+  document.getElementById("tages-frage").hidden = true;
 
   for (let zeile = 0; zeile < MAX_VERSUCHE; zeile++) {
     for (let spalte = 0; spalte < WORTLAENGE; spalte++) {
@@ -583,10 +595,34 @@ function spielStarten() {
   const g = ladeSpielstand();
 
   if (modus === "taeglich") {
-    ZIEL = wortDesTages();
-    if (g !== null && g.datum === heuteText()) {
+    const heute = heuteText();
+    const entschieden = localStorage.getItem("woerdle-tagesentscheidung-" + sprache) === heute;
+    if (g !== null && g.datum === heute) {
       ZIEL = g.ziel;
+      tagesDatum = heute;
       spielstandWiederherstellen(g);
+    } else if (g !== null && g.beendet === false && !entschieden) {
+      // altes, unfertiges Tagesspiel + neues Wort verfuegbar -> fragen
+      ZIEL = g.ziel;
+      tagesDatum = g.datum;
+      spielstandWiederherstellen(g);
+      tagesFrageZeigen(
+        t("newDaily"),
+        t("continueBtn"),
+        function () { tagesEntscheidungMerken(); tagesFrageAltweiter(); },
+        t("newWordBtn"),
+        function () { tagesEntscheidungMerken(); neuesTageswort(); }
+      );
+    } else if (g !== null && g.beendet === false && entschieden) {
+      // hat sich fuers Weiterspielen entschieden -> altes Spiel fortsetzen
+      ZIEL = g.ziel;
+      tagesDatum = g.datum;
+      spielstandWiederherstellen(g);
+      tagesFrageAltweiter();
+    } else {
+      // kein oder bereits beendetes Tagesspiel -> heutiges Wort
+      ZIEL = wortDesTages();
+      tagesDatum = heute;
     }
   } else {
     if (g !== null) {
@@ -607,6 +643,49 @@ function neuesEndlosSpiel() {
   ZIEL = naechstesZielwort();
   console.log("Zielwort:", ZIEL);
   statistikAnzeigen(statistikLaden());
+}
+
+// --- Tagesrätsel-Frage: altes weiterspielen vs. neues Wort ---
+function tagesEntscheidungMerken() {
+  localStorage.setItem("woerdle-tagesentscheidung-" + sprache, heuteText());
+}
+function neuesTageswort() {
+  tagesFrageWeg();
+  boardZuruecksetzen();
+  ZIEL = wortDesTages();
+  tagesDatum = heuteText();
+  console.log("Zielwort (heute):", ZIEL);
+  spielSpeichern(false, false); // heutiges (leeres) Tagesspiel sichern, ersetzt das alte
+  statistikAnzeigen(statistikLaden());
+}
+// kleiner Knopf, um beim Weiterspielen jederzeit zum heutigen Wort zu wechseln
+function tagesFrageAltweiter() {
+  tagesFrageZeigen(null, t("todayWordBtn"), function () { neuesTageswort(); }, null, null);
+}
+function tagesFrageZeigen(text, label1, aktion1, label2, aktion2) {
+  const box = document.getElementById("tages-frage");
+  const txt = document.getElementById("tages-frage-text");
+  const b1 = document.getElementById("btn-tag-1");
+  const b2 = document.getElementById("btn-tag-2");
+  if (text === null) {
+    txt.hidden = true;
+  } else {
+    txt.hidden = false;
+    txt.textContent = text;
+  }
+  b1.textContent = label1;
+  b1.onclick = aktion1;
+  if (label2 === null) {
+    b2.hidden = true;
+  } else {
+    b2.hidden = false;
+    b2.textContent = label2;
+    b2.onclick = aktion2;
+  }
+  box.hidden = false;
+}
+function tagesFrageWeg() {
+  document.getElementById("tages-frage").hidden = true;
 }
 
 // ------------------------------------------------------------

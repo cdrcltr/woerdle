@@ -265,3 +265,15 @@ body { touch-action: manipulation; }
 .taste, .feld, .modus-knopf, .neustart, .teilen, .sprache-knopf {
   touch-action: manipulation;
 }
+
+/* Tagesrätsel-Frage (neues Wort vs. altes weiterspielen) */
+.tages-frage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0;
+  font-size: 0.85rem;
+  color: var(--text);
+}
