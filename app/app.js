@@ -8,7 +8,7 @@
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 const STAT_SCHLUESSEL = "woerdle-statistik";
-const APP_VERSION = "1.7";   // bei jedem Release hochzaehlen
+const APP_VERSION = "1.8";   // bei jedem Release hochzaehlen
 
 // --- Texte je Sprache ---
 const TEXTE = {
@@ -418,19 +418,16 @@ function uiTexteSetzen() {
 // Modus-Anzeige
 // ------------------------------------------------------------
 function ladeModus() {
-  // Wenn ein noch nicht beendetes Endlos-Spiel existiert, dort weitermachen -
-  // sonst im Tagesmodus starten.
-  const roh = localStorage.getItem("woerdle-endlos-" + sprache);
-  if (roh !== null) {
-    const s = JSON.parse(roh);
-    if (s.beendet === false) {
-      return "endlos";
-    }
+  // zuletzt gewaehlten Tab wiederherstellen (Standard: Tagesmodus)
+  const m = localStorage.getItem("woerdle-modus");
+  if (m === null) {
+    return "taeglich";
   }
-  return "taeglich";
+  return m;
 }
 function modusSetzen(neu) {
   modus = neu;
+  localStorage.setItem("woerdle-modus", neu);
   modusAnzeigen();
   spielStarten();
 }
