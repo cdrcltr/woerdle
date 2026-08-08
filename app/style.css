@@ -287,3 +287,4 @@ body { touch-action: manipulation; }
   font-size: 0.85rem;
   color: var(--text);
 }
+.tages-frage[hidden] { display: none; }
