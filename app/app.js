@@ -8,7 +8,7 @@
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 const STAT_SCHLUESSEL = "woerdle-statistik";
-const APP_VERSION = "1.8";   // bei jedem Release hochzaehlen
+const APP_VERSION = "1.9";   // bei jedem Release hochzaehlen
 
 // --- Texte je Sprache ---
 const TEXTE = {
@@ -24,6 +24,7 @@ const TEXTE = {
     newDaily: "Neues Tagesrätsel verfügbar!",
     continueBtn: "Weiterspielen", newWordBtn: "Neues Wort",
     todayWordBtn: "Heutiges Wort", oldFinished: "Altes Spiel beendet.",
+    flagEmoji: "🇩🇪",
   },
   en: {
     daily: "Daily word", endless: "Endless",
@@ -37,6 +38,7 @@ const TEXTE = {
     newDaily: "New daily puzzle available!",
     continueBtn: "Continue", newWordBtn: "New word",
     todayWordBtn: "Today's word", oldFinished: "Old game finished.",
+    flagEmoji: "🇬🇧",
   },
 };
 
@@ -354,9 +356,9 @@ function statistikAnzeigen(stat) {
 function baueTeilenText(gewonnen) {
   let kopf;
   if (gewonnen) {
-    kopf = t("shareTitle") + " " + verlauf.length + "/6";
+    kopf = t("flagEmoji") + " " + t("shareTitle") + " " + verlauf.length + "/6";
   } else {
-    kopf = t("shareTitle") + " X/6";
+    kopf = t("flagEmoji") + " " + t("shareTitle") + " X/6";
   }
   const zeilen = [];
   for (const reihe of verlauf) {
