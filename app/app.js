@@ -8,7 +8,7 @@
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 const STAT_SCHLUESSEL = "woerdle-statistik";
-const APP_VERSION = "2.2";   // bei jedem Release hochzaehlen
+const APP_VERSION = "2.3";   // bei jedem Release hochzaehlen
 
 // --- Texte je Sprache ---
 const TEXTE = {
@@ -363,7 +363,8 @@ function datumFormatiert(roh) {
   let tag = teile[2];
   if (monat.length < 2) { monat = "0" + monat; }
   if (tag.length < 2) { tag = "0" + tag; }
-  return tag + "." + monat + "." + teile[0];
+  // ohne Jahr, damit WhatsApp es nicht als Telefonnummer erkennt
+  return tag + "." + monat + ".";
 }
 function baueTeilenText(gewonnen) {
   let datumRoh;
