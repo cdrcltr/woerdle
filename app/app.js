@@ -8,7 +8,7 @@
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 const STAT_SCHLUESSEL = "woerdle-statistik";
-const APP_VERSION = "1.9";   // bei jedem Release hochzaehlen
+const APP_VERSION = "2.1";   // bei jedem Release hochzaehlen
 
 // --- Texte je Sprache ---
 const TEXTE = {
@@ -297,15 +297,16 @@ function spielBeenden(gewonnen) {
   teilenText = baueTeilenText(gewonnen);
   const stat = statistikAktualisieren(gewonnen);
   statistikAnzeigen(stat);
-  document.getElementById("teilen").hidden = false;
   spielSpeichern(gewonnen, true);
   if (modus === "taeglich") {
+    document.getElementById("teilen").hidden = false;
     document.getElementById("neustart").hidden = true;
     if (tagesDatum !== heuteText()) {
       // altes Tagesspiel beendet -> heutiges Wort anbieten
       tagesFrageZeigen(t("oldFinished"), t("todayWordBtn"), function () { neuesTageswort(); }, null, null);
     }
   } else {
+    document.getElementById("teilen").hidden = true;
     document.getElementById("neustart").hidden = false;
   }
 }
@@ -353,12 +354,30 @@ function statistikAnzeigen(stat) {
 // ------------------------------------------------------------
 // Teilen
 // ------------------------------------------------------------
+function datumFormatiert(roh) {
+  const teile = roh.split("-");
+  if (teile.length !== 3) {
+    return roh;
+  }
+  let monat = teile[1];
+  let tag = teile[2];
+  if (monat.length < 2) { monat = "0" + monat; }
+  if (tag.length < 2) { tag = "0" + tag; }
+  return tag + "." + monat + "." + teile[0];
+}
 function baueTeilenText(gewonnen) {
+  let datumRoh;
+  if (modus === "taeglich") {
+    datumRoh = tagesDatum;
+  } else {
+    datumRoh = heuteText();
+  }
+  const datum = datumFormatiert(datumRoh);
   let kopf;
   if (gewonnen) {
-    kopf = t("flagEmoji") + " " + t("shareTitle") + " " + verlauf.length + "/6";
+    kopf = t("flagEmoji") + " " + t("shareTitle") + " " + datum + " – " + verlauf.length + "/6";
   } else {
-    kopf = t("flagEmoji") + " " + t("shareTitle") + " X/6";
+    kopf = t("flagEmoji") + " " + t("shareTitle") + " " + datum + " – X/6";
   }
   const zeilen = [];
   for (const reihe of verlauf) {
@@ -540,12 +559,13 @@ function spielstandWiederherstellen(state) {
   if (state.beendet) {
     spielVorbei = true;
     teilenText = baueTeilenText(state.gewonnen);
-    document.getElementById("teilen").hidden = false;
     let zusatz = "";
     if (modus === "taeglich") {
+      document.getElementById("teilen").hidden = false;
       document.getElementById("neustart").hidden = true;
       zusatz = t("comeback");
     } else {
+      document.getElementById("teilen").hidden = true;
       document.getElementById("neustart").hidden = false;
     }
     if (state.gewonnen) {
