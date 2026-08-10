@@ -8,7 +8,7 @@
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 const STAT_SCHLUESSEL = "woerdle-statistik";
-const APP_VERSION = "2.1";   // bei jedem Release hochzaehlen
+const APP_VERSION = "2.2";   // bei jedem Release hochzaehlen
 
 // --- Texte je Sprache ---
 const TEXTE = {
@@ -375,9 +375,9 @@ function baueTeilenText(gewonnen) {
   const datum = datumFormatiert(datumRoh);
   let kopf;
   if (gewonnen) {
-    kopf = t("flagEmoji") + " " + t("shareTitle") + " " + datum + " – " + verlauf.length + "/6";
+    kopf = t("shareTitle") + " " + datum + "\n" + t("flagEmoji") + " " + verlauf.length + "/6";
   } else {
-    kopf = t("flagEmoji") + " " + t("shareTitle") + " " + datum + " – X/6";
+    kopf = t("shareTitle") + " " + datum + "\n" + t("flagEmoji") + " X/6";
   }
   const zeilen = [];
   for (const reihe of verlauf) {
