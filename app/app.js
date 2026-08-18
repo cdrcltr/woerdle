@@ -8,7 +8,7 @@
 const WORTLAENGE = 5;
 const MAX_VERSUCHE = 6;
 const STAT_SCHLUESSEL = "woerdle-statistik";
-const APP_VERSION = "2.3";   // bei jedem Release hochzaehlen
+const APP_VERSION = "2.4";   // bei jedem Release hochzaehlen
 
 // --- Texte je Sprache ---
 const TEXTE = {
@@ -221,7 +221,10 @@ function verarbeiteTaste(taste) {
 
   if (/^[a-zA-ZäöüÄÖÜ]$/.test(taste)) {
     zeileBuchstaben[aktivesFeld] = taste.toUpperCase();
-    aktivesFeld = naechstesLeeresFeld();
+    // nach dem Tippen automatisch ein Feld weiter (bis zum letzten)
+    if (aktivesFeld < WORTLAENGE - 1) {
+      aktivesFeld = aktivesFeld + 1;
+    }
     document.getElementById("meldung").textContent = "";
     eingabeAnzeigen();
   }

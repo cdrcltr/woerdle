@@ -1,6 +1,6 @@
 // Service Worker - network-first (automatische Updates, offline via Cache).
 // Spielstände & Statistik liegen in localStorage und werden NIE angefasst.
-const CACHE_VERSION = "woerdle-v16";
+const CACHE_VERSION = "woerdle-v17";
 const DATEIEN = [
   "index.html",
   "style.css",
